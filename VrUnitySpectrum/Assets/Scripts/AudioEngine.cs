@@ -6,7 +6,7 @@ using UnityEngine;
 public class AudioEngine : MonoBehaviour
 {
     public string filePath;
-    public double[][] fftData;
+    public static double[][] fftData;
     private double[] _importDataAsSamples;
     public int importSampleRate;
     public int importBitDepth;
@@ -118,7 +118,7 @@ public class AudioEngine : MonoBehaviour
                 }
                 fft.Run(input[i], result[i]);
             }
-            this.fftData = result;
+            fftData = result;
             fft.Dispose();
         }
     }
