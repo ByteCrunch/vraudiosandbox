@@ -6,13 +6,15 @@ using UnityEngine;
 public class AudioEngine : MonoBehaviour
 {
     public string filePath;
-    public static double[][] fftData;
+    public double[][] fftData;
     private double[] _importDataAsSamples;
     public int importSampleRate;
     public int importBitDepth;
     public double[] fftFrequencies;
+    public int fftBinCount;
 
-    void Start()
+    // Make sure audio engine is loaded before Start() routines of other GameObjects
+    void Awake()
     {
         this.LoadAudioData();
         this.DoFft();
@@ -88,6 +90,7 @@ public class AudioEngine : MonoBehaviour
             int numOfChunks = (int)System.Math.Ceiling(numOfSamples / chunkFactor);
 
             int fftSize = (int)(this.importSampleRate * 0.0232199546485261); // magic number taken from 44.100 Hz / 1024
+            this.fftBinCount = fftSize;
 
             // Create map of frequencies for the bins
             this.fftFrequencies = new double[fftSize / 2];
