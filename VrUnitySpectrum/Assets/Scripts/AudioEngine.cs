@@ -22,7 +22,7 @@ public class AudioEngine : MonoBehaviour
     public void LoadAudioData()
     {
         //TODO this is still hardcoded for testing
-        filePath = @"D:\Temp\test.wav";
+        filePath = @"E:\Temp\test.wav";
 
         // Read in wav file and convert into an array of samples
         NAudio.Wave.WaveFileReader waveFileReader = new NAudio.Wave.WaveFileReader(filePath);
