@@ -6,7 +6,10 @@ using UnityEngine;
 public class AudioEngine : MonoBehaviour
 {
     public string filePath;
+
+    [HideInInspector]
     public double[][] fftData;
+
     private double[] _importDataAsSamples;
     public int importSampleRate;
     public int importBitDepth;
