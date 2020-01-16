@@ -10,7 +10,7 @@ public class AudioEngine : MonoBehaviour
     [HideInInspector]
     public double[][] fftData;
 
-    private double[] _importDataAsSamples;
+    private double[] importDataAsSamples;
     public int importSampleRate;
     public int importBitDepth;
     public double[] fftFrequencies;
@@ -41,38 +41,38 @@ public class AudioEngine : MonoBehaviour
         // Convert into double array
         // 8, 16, 24, 32 and 64 bits per sample are supported for now
         int numOfSamples = numOfBytes / (this.importBitDepth / 8);
-        this._importDataAsSamples = new double[numOfSamples];
+        this.importDataAsSamples = new double[numOfSamples];
 
         switch (this.importBitDepth)
         {
             case 8:
                 for (int i = 0; i < numOfSamples; i++)
                 {
-                    this._importDataAsSamples[i] = importDataAsBytes[i];
+                    this.importDataAsSamples[i] = importDataAsBytes[i];
                 }
                 break;
             case 16:
                 for (int i = 0; i < numOfSamples; i++)
                 {
-                    this._importDataAsSamples[i] = (double)System.BitConverter.ToInt16(importDataAsBytes, i);
+                    this.importDataAsSamples[i] = (double)System.BitConverter.ToInt16(importDataAsBytes, i);
                 }
                 break;
             case 24:
                 for (int i = 0; i < numOfSamples - 2; i++)
                 {
-                    this._importDataAsSamples[i] = (double)(importDataAsBytes[i] + (importDataAsBytes[i + 1] << 8) + (importDataAsBytes[i + 2]) << 16);
+                    this.importDataAsSamples[i] = (double)(importDataAsBytes[i] + (importDataAsBytes[i + 1] << 8) + (importDataAsBytes[i + 2]) << 16);
                 }
                 break;
             case 32:
                 for (int i = 0; i < numOfSamples; i++)
                 {
-                    this._importDataAsSamples[i] = (double)System.BitConverter.ToInt32(importDataAsBytes, i);
+                    this.importDataAsSamples[i] = (double)System.BitConverter.ToInt32(importDataAsBytes, i);
                 }
                 break;
             case 64:
                 for (int i = 0; i < numOfSamples; i++)
                 {
-                    this._importDataAsSamples[i] = (double)System.BitConverter.ToInt64(importDataAsBytes, i);
+                    this.importDataAsSamples[i] = (double)System.BitConverter.ToInt64(importDataAsBytes, i);
                 }
                 break;
             default:
@@ -83,10 +83,10 @@ public class AudioEngine : MonoBehaviour
 
     public void DoFft()
     {
-        if (this._importDataAsSamples != null && this._importDataAsSamples.Length > 0)
+        if (this.importDataAsSamples != null && this.importDataAsSamples.Length > 0)
         {
             // Calculate size of chunk that will be sent to FFT routine
-            int numOfSamples = this._importDataAsSamples.Length;
+            int numOfSamples = this.importDataAsSamples.Length;
             double durationInSecs = numOfSamples / this.importSampleRate;
             double chunkFactor = durationInSecs / 0.05; // 50ms per chunk
             int chunkSize = (int)(numOfSamples / chunkFactor);
@@ -114,9 +114,9 @@ public class AudioEngine : MonoBehaviour
                 for (int j = 0; j < chunkSize; j++)
                 {
                     // last chunk might be smaller than chunkSize
-                    if (this._importDataAsSamples.Length > (i * chunkSize) + j)
+                    if (this.importDataAsSamples.Length > (i * chunkSize) + j)
                     {
-                        input[i][j] = this._importDataAsSamples[(i * chunkSize) + j];
+                        input[i][j] = this.importDataAsSamples[(i * chunkSize) + j];
                     } else
                     {
                         break;
@@ -124,7 +124,7 @@ public class AudioEngine : MonoBehaviour
                 }
                 fft.Run(input[i], result[i]);
             }
-            fftData = result;
+            this.fftData = result;
             fft.Dispose();
         }
     }
