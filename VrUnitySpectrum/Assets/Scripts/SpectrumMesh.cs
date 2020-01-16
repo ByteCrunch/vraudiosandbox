@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
+//[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 
 public class SpectrumMesh : MonoBehaviour
 {
@@ -11,10 +11,12 @@ public class SpectrumMesh : MonoBehaviour
 
     private AudioEngine audioEngine;
 
-    //Mesh Render
-    private Mesh mesh;
-    private Vector3[] vertices;
-    private int[] triangles;
+    private GameObject[] meshObj;
+    private MeshFilter[] mFilters;
+    private MeshRenderer[] mRenderers;
+    private Mesh[] meshes;
+    private Vector3[][] vertices;
+    private int[][] triangles;
 
     private int countOfRasterVertices;
     private int countOfPeakVertices;
@@ -22,29 +24,61 @@ public class SpectrumMesh : MonoBehaviour
 
     private void Awake()
     {
-        GetComponent<MeshFilter>().mesh = mesh = new Mesh();
-        mesh.name = "FFT Mesh";
+        
     }
 
     private void Start()
     {
         this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
-        Debug.Log("fftBinCount: " + this.audioEngine.fftBinCount.ToString());
-        Debug.Log("fftData.Length: " + this.audioEngine.fftData.Length.ToString());
+        Debug.Log("<SpectrumMesh> fftBinCount: " + this.audioEngine.fftBinCount.ToString());
+        Debug.Log("<SpectrumMesh> fftData.Length: " + this.audioEngine.fftData.Length.ToString());
 
-        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; // Increase from 16bit as this would only allow 65.536 vertices per mesh
-        mesh.Clear();
+        this.meshObj = new GameObject[this.audioEngine.fftData.Length];
+        this.mFilters = new MeshFilter[this.audioEngine.fftData.Length];
+        this.mRenderers = new MeshRenderer[this.audioEngine.fftData.Length];
 
-        SetVertices();
-        SetTriangles();
-        mesh.RecalculateBounds();
-        mesh.RecalculateNormals();
-        mesh.Optimize();
-    }   
-    
-    
+        this.meshes = new Mesh[this.audioEngine.fftData.Length];
+        this.vertices = new Vector3[this.audioEngine.fftData.Length][];
+        this.triangles = new int[this.audioEngine.fftData.Length][];
+
+        for (int i=0; i < this.audioEngine.fftData.Length; i++)
+        //for (int i=0; i < 1; i++)
+        {
+            // Add GOs, MFs and MRs
+            this.meshObj[i] = new GameObject("spectrumMesh" + i.ToString());
+            this.meshObj[i].transform.parent = this.transform;
+            
+            this.mFilters[i] = meshObj[i].AddComponent<MeshFilter>();
+            this.mFilters[i].name = "FFTData" + i.ToString();
+
+            this.mRenderers[i] = meshObj[i].AddComponent<MeshRenderer>();
+            this.mRenderers[i].material = Resources.Load("Materials/SpectrumMat") as Material;
+
+            this.meshes[i] = new Mesh();
+            //this.meshes[i].indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; // Increase from 16bit as this would only allow 65.536 vertices per mesh
+            this.meshes[i].Clear();
+            this.mFilters[i].mesh = this.meshes[i];
+            
+            // Create Spectrum polygons
+            this.SetVertices(i);
+            this.SetTriangles(i);
+            this.meshes[i].RecalculateBounds();
+            this.meshes[i].RecalculateNormals();
+            this.meshes[i].Optimize();
+        }
+
+
+        //Testing
+        Debug.Log(this.meshes[0].vertices.GetLength(0).ToString());
+        for (int i=0; i < this.meshes[0].vertices.GetLength(0); i++)
+        {
+            Debug.Log("<SpectrumMesh> " + this.meshes[0].vertices[i].x.ToString() + " " + this.meshes[0].vertices[i].y.ToString() + " " + this.meshes[0].vertices[i].z.ToString());
+        }
+    }
+
+    /*
     // Visualize for Scene view and testing (huge performance killer for lots of vertices)
-    /*private void OnDrawGizmos()
+    private void OnDrawGizmos()
     {
         if (this.audioEngine == null)
         {
@@ -52,106 +86,79 @@ public class SpectrumMesh : MonoBehaviour
         }
 
         // Draw Spheres for vertices
-        Mesh m = GetComponent<MeshFilter>().sharedMesh;
-
-        int c = 0;
         var transform = this.transform;
-        foreach (var vert in m.vertices)
+        foreach (var vert in this.meshes[0].vertices)
         {
-            if (c < this.countOfRasterVertices)
-                Gizmos.color = Color.green;
-            else
-                Gizmos.color = Color.red;
+            Gizmos.color = Color.red;
             Gizmos.DrawSphere(transform.TransformPoint(vert), 0.003f);
-            c++;
         }
             
     }*/
 
-    private void SetVertices()
+    private void SetVertices(int meshIdx)
     {
-        //this.countOfRasterVertices = (this.audioEngine.fftData.Length + 1) * (this.audioEngine.fftBinCount + 1);
-        //this.countOfPeakVertices = this.audioEngine.fftData.Length * this.audioEngine.fftBinCount;
+        this.countOfRasterVertices = 2 * (this.audioEngine.fftBinCount + 1);
+        this.countOfPeakVertices = this.audioEngine.fftBinCount;
 
-        this.countOfRasterVertices = (4 + 1) * (this.audioEngine.fftBinCount + 1);
-        this.countOfPeakVertices = 4 * this.audioEngine.fftBinCount;
+        this.vertices[meshIdx] = new Vector3[this.countOfRasterVertices + this.countOfPeakVertices];
 
-        vertices = new Vector3[this.countOfRasterVertices + this.countOfPeakVertices];
-
-        Vector3 center = transform.position;
+        Vector3 center = transform.parent.position;
+        //Vector3 center = new Vector3(0f, 0f, 0f);
 
         // Add vertices
         // first the ground raster vertices, then all fft value peak vertices
-        int rasterIdx = 0;
-        int peakIdx = this.countOfRasterVertices;
-        //for (int i = 0; i <= this.audioEngine.fftData.Length; i++)
-        for (int i = 0; i <= 4; i++)
+
+        // Add ground raster vertices
+        for (int i = 0; i < this.countOfRasterVertices / 2; i++)
         {
-            for (int j = 0; j <= this.audioEngine.fftBinCount; j++)
-            {
-                // ground raster vertex
-                Vector3 r;
-                r.x = center.x + j * this.edgeLengthOfRaster;
-                r.y = center.y;
-                r.z = center.z + i * this.edgeLengthOfRaster;
+            Vector3 r1;
+            r1.x = center.x + i * this.edgeLengthOfRaster;
+            r1.y = center.y;
+            r1.z = center.z + meshIdx * this.edgeLengthOfRaster;
 
-                vertices[rasterIdx] = r;
+            Vector3 r2;
+            r2.x = center.x + i * this.edgeLengthOfRaster;
+            r2.y = center.y;
+            r2.z = center.z + meshIdx * this.edgeLengthOfRaster + this.edgeLengthOfRaster;
 
-                // don't try to add peak vertices for the last raster row
-                //if (i < this.audioEngine.fftData.Length && j < this.audioEngine.fftBinCount)
-                if (i < 4 && j < this.audioEngine.fftBinCount)
-                {
-                    // peak vertex
-                    Vector3 p;
-                    p.x = center.x + j * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
-                    p.y = center.y + (float)this.audioEngine.fftData[i][j] * this.dataScale;
-                    p.z = center.z + i * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
-
-                    vertices[peakIdx] = p;
-                    Debug.Log(peakIdx);
-                    peakIdx++;
-                }
-                rasterIdx++;
-            }
+            this.vertices[meshIdx][i] = r1; 
+            this.vertices[meshIdx][i + this.audioEngine.fftBinCount + 1] = r2;
         }
-        mesh.vertices = vertices;
 
-        int x = 0;
-        foreach (var v in mesh.vertices)
-        {
-            Debug.Log(x.ToString()+": "+v.ToString());
-            x++;
+        // Add peak vertices
+        for (int i = 0; i < this.countOfPeakVertices; i++) {
+            Vector3 p;
+            p.x = center.x + i * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
+            p.y = center.y + (float)this.audioEngine.fftData[meshIdx][i] * this.dataScale;
+            p.z = center.z + meshIdx * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
+
+            this.vertices[meshIdx][this.countOfRasterVertices+i] = p;
         }
+        this.meshes[meshIdx].vertices = this.vertices[meshIdx];
     }
-    private void SetTriangles()
+
+    private void SetTriangles(int meshIdx)
     {
-        //triangles = new int[this.audioEngine.fftBinCount * 4 * 3 * this.audioEngine.fftData.Length]; //4 pyramid sides per fft bin (without base), 3 vertices indices per side
-        triangles = new int[this.audioEngine.fftBinCount * 4 * 3 * 4]; //4 pyramid sides per fft bin (without base), 3 vertices indices per side
+        this.triangles[meshIdx] = new int[this.audioEngine.fftBinCount * 4 * 3]; //4 pyramid sides per fft bin (without base), 3 vertices indices per side
 
-        int offset = 0;
-        for (int i = 0; i < triangles.Length-12; i+=12)
+        for (int i = 0; i < this.triangles[meshIdx].Length - 12; i += 12)
         {
-            if (i / 12 % this.audioEngine.fftBinCount == 0 && i / 12 > 0)
-            {
-                offset++;
-            }
+            this.triangles[meshIdx][i] = this.countOfRasterVertices + i / 12;
+            this.triangles[meshIdx][i + 1] = i / 12;
+            this.triangles[meshIdx][i + 2] = this.audioEngine.fftBinCount + 1 + i / 12;
 
-            triangles[i] = this.countOfRasterVertices + i / 12;
-            triangles[i + 1] = i / 12 + offset;
-            triangles[i + 2] = this.audioEngine.fftBinCount + 1 + i / 12 + offset;
+            this.triangles[meshIdx][i + 3] = this.countOfRasterVertices + i / 12;
+            this.triangles[meshIdx][i + 4] = this.audioEngine.fftBinCount + 2 + i / 12;
+            this.triangles[meshIdx][i + 5] = 1 + i / 12;
 
-            triangles[i + 3] = this.countOfRasterVertices + i / 12;
-            triangles[i + 4] = this.audioEngine.fftBinCount + 2 + i / 12 + offset;
-            triangles[i + 5] = 1 + i / 12 + offset;
+            this.triangles[meshIdx][i + 6] = this.countOfRasterVertices + i / 12;
+            this.triangles[meshIdx][i + 7] = this.audioEngine.fftBinCount + 1 + i / 12;
+            this.triangles[meshIdx][i + 8] = this.audioEngine.fftBinCount + 2 + i / 12;
+            this.triangles[meshIdx][i + 9] = this.countOfRasterVertices + i / 12;
+            this.triangles[meshIdx][i + 10] = 1 + i / 12;
+            this.triangles[meshIdx][i + 11] = i / 12 ;
 
-            triangles[i + 6] = this.countOfRasterVertices + i / 12;
-            triangles[i + 7] = this.audioEngine.fftBinCount + 1 + i / 12 + offset;
-            triangles[i + 8] = this.audioEngine.fftBinCount + 2 + i / 12 + offset;
-
-            triangles[i + 9] = this.countOfRasterVertices + i / 12;
-            triangles[i + 10] = 1 + i / 12 + offset;
-            triangles[i + 11] = i / 12 + offset;
         }
-        mesh.triangles = triangles;
+        this.meshes[meshIdx].triangles = this.triangles[meshIdx];
     }
 }
