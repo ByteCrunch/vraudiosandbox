@@ -37,6 +37,7 @@ public class Fft
         for (int i = 0; i < n; i++)
             this.fin[i] = 0.0;
 
+        // http://www.fftw.org/fftw3_doc/The-1d-Real_002ddata-DFT.html#The-1d-Real_002ddata-DFT
         this.fplan = fftw.dft_r2c_1d(n, this.pin, this.pout, fftw_flags.Estimate);
     }
 

@@ -109,7 +109,11 @@ public class AudioEngine : MonoBehaviour
             for (int i = 0; i < numOfChunks; i++)
             {
                 input[i] = new double[chunkSize];
-                result[i] = new double[fftSize];
+
+                // This output array Y can easily be shown to possess the “Hermitian” symmetry Yk = Yn-k*, where we take Y to be periodic so that Yn = Y0. 
+                // As a result of this symmetry, half of the output Y is redundant (being the complex conjugate of the other half), and so the 1d r2c transforms only output elements 0…n/2 of Y
+                // http://www.fftw.org/fftw3_doc/The-1d-Real_002ddata-DFT.html#The-1d-Real_002ddata-DFT
+                result[i] = new double[chunkSize / 2];
 
                 for (int j = 0; j < chunkSize; j++)
                 {
