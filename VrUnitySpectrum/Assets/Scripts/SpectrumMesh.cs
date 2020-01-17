@@ -17,6 +17,7 @@ public class SpectrumMesh : MonoBehaviour
     private Mesh[] meshes;
     private Vector3[][] vertices;
     private int[][] triangles;
+    private Color32[][] colors;
 
     private int countOfRasterVertices;
     private int countOfPeakVertices;
@@ -40,6 +41,7 @@ public class SpectrumMesh : MonoBehaviour
         this.meshes = new Mesh[this.audioEngine.fftData.Length];
         this.vertices = new Vector3[this.audioEngine.fftData.Length][];
         this.triangles = new int[this.audioEngine.fftData.Length][];
+        this.colors = new Color32[this.audioEngine.fftData.Length][];
 
         for (int i=0; i < this.audioEngine.fftData.Length; i++)
         //for (int i=0; i < 1; i++)
@@ -61,6 +63,7 @@ public class SpectrumMesh : MonoBehaviour
             
             // Create Spectrum polygons
             this.SetVertices(i);
+            this.SetMeshColors(i);
             this.SetTriangles(i);
             this.meshes[i].RecalculateBounds();
             this.meshes[i].RecalculateNormals();
@@ -135,6 +138,16 @@ public class SpectrumMesh : MonoBehaviour
             this.vertices[meshIdx][this.countOfRasterVertices+i] = p;
         }
         this.meshes[meshIdx].vertices = this.vertices[meshIdx];
+    }
+
+    private void SetMeshColors(int meshIdx)
+    {
+        this.colors[meshIdx] = new Color32[this.vertices[meshIdx].Length];
+
+        for (int i = 0; i < this.vertices[meshIdx].Length; i++)
+            this.colors[meshIdx][i] = Color.Lerp(Color.red, Color.green, this.vertices[meshIdx][i].y);
+
+        this.meshes[meshIdx].colors32 = this.colors[meshIdx];
     }
 
     private void SetTriangles(int meshIdx)
