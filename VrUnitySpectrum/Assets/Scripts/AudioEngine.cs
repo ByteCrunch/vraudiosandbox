@@ -87,13 +87,15 @@ public class AudioEngine : MonoBehaviour
     {
         if (this.importDataAsSamples != null && this.importDataAsSamples.Length > 0)
         {
+            int fftSize = (int)(this.importSampleRate * 0.0232199546485261); // magic number taken from 44.100 Hz / 1024
+            //int fftSize = 2048;
+            this.fftBinCount = fftSize / 2;
+
             // Calculate size of chunk that will be sent to FFT routine
             //int chunkSize = this.importSampleRate / 2 / 100; // 50ms
-            int chunkSize = this.importSampleRate / 2; // 500ms
-            int numOfChunks = (this.importDataAsSamples.Length + chunkSize-1) / chunkSize; // integer round up
-
-            int fftSize = (int)(this.importSampleRate * 0.0232199546485261); // magic number taken from 44.100 Hz / 1024
-            this.fftBinCount = fftSize / 2;
+            //int chunkSize = this.importSampleRate / 2; // 500ms
+            int chunkSize = fftSize;
+            int numOfChunks = (this.importDataAsSamples.Length + chunkSize - 1) / chunkSize; // integer round up
 
             Debug.Log("numOfSamples: " + this.importDataAsSamples.Length.ToString() + " chunkSize: " + chunkSize.ToString() + " numOfChunks: " + numOfChunks.ToString() + " binResolution: " + (this.importSampleRate / fftSize).ToString() + "Hz");
 
@@ -118,7 +120,7 @@ public class AudioEngine : MonoBehaviour
 
                 for (int j = 0; j < chunkSize; j++)
                 {
-                    // last chunk might be smaller than chunkSize
+                    // last chunk might be smaller than chunkSize or chunkSize smaller than fft size
                     if (this.importDataAsSamples.Length > i * chunkSize + j)
                     {
                         input[i][j] = this.importDataAsSamples[i * chunkSize + j];
