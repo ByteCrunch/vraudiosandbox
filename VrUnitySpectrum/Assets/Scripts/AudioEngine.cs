@@ -25,7 +25,9 @@ public class AudioEngine : MonoBehaviour
     public void LoadAudioData()
     {
         //TODO this is still hardcoded for testing
-        filePath = @"E:\Temp\test.wav";
+        //filePath = @"E:\Temp\test.wav";
+        //filePath = @"E:\Temp\sinus4000hz-10db.wav";
+        filePath = @"E:\Temp\audiocheck.net_hdsweep_1Hz_48000Hz_-3dBFS_30s.wav";
 
         // Read in wav file and convert into an array of samples
         NAudio.Wave.WaveFileReader waveFileReader = new NAudio.Wave.WaveFileReader(filePath);
@@ -86,19 +88,19 @@ public class AudioEngine : MonoBehaviour
         if (this.importDataAsSamples != null && this.importDataAsSamples.Length > 0)
         {
             // Calculate size of chunk that will be sent to FFT routine
-            int numOfSamples = this.importDataAsSamples.Length;
-            double durationInSecs = numOfSamples / this.importSampleRate;
-            double chunkFactor = durationInSecs / 0.05; // 50ms per chunk
-            int chunkSize = (int)(numOfSamples / chunkFactor);
-            int numOfChunks = (int)System.Math.Ceiling(numOfSamples / chunkFactor);
+            //int chunkSize = this.importSampleRate / 2 / 100; // 50ms
+            int chunkSize = this.importSampleRate / 2; // 500ms
+            int numOfChunks = (this.importDataAsSamples.Length + chunkSize-1) / chunkSize; // integer round up
 
             int fftSize = (int)(this.importSampleRate * 0.0232199546485261); // magic number taken from 44.100 Hz / 1024
             this.fftBinCount = fftSize / 2;
 
+            Debug.Log("numOfSamples: " + this.importDataAsSamples.Length.ToString() + " chunkSize: " + chunkSize.ToString() + " numOfChunks: " + numOfChunks.ToString() + " binResolution: " + (this.importSampleRate / fftSize).ToString() + "Hz");
+
             // Create map of frequencies for the bins
-            this.fftFrequencies = new double[fftSize / 2];
-            for (int i = 0; i < fftSize / 2; i++)
-                this.fftFrequencies[i] = (double)i / (fftSize / 2) * this.importSampleRate / 2;
+            this.fftFrequencies = new double[this.fftBinCount];
+            for (int i = 0; i < this.fftBinCount; i++)
+                this.fftFrequencies[i] = (double)i / this.fftBinCount * this.importSampleRate / 2;
 
             // Do FFT per chunk
             double[][] input = new double[numOfChunks][];
@@ -110,20 +112,19 @@ public class AudioEngine : MonoBehaviour
             {
                 input[i] = new double[chunkSize];
 
-                // This output array Y can easily be shown to possess the “Hermitian” symmetry Yk = Yn-k*, where we take Y to be periodic so that Yn = Y0. 
-                // As a result of this symmetry, half of the output Y is redundant (being the complex conjugate of the other half), and so the 1d r2c transforms only output elements 0…n/2 of Y
-                // http://www.fftw.org/fftw3_doc/The-1d-Real_002ddata-DFT.html#The-1d-Real_002ddata-DFT
-                result[i] = new double[chunkSize / 2];
+                // Due to aliasing the second part would be redundant, so the ouput array is fftSize / 2 + 1
+                // as there is no need to store mirrored information
+                result[i] = new double[fftSize / 2 + 1];
 
                 for (int j = 0; j < chunkSize; j++)
                 {
                     // last chunk might be smaller than chunkSize
-                    if (this.importDataAsSamples.Length > (i * chunkSize) + j)
+                    if (this.importDataAsSamples.Length > i * chunkSize + j)
                     {
-                        input[i][j] = this.importDataAsSamples[(i * chunkSize) + j];
-                    } else
-                    {
-                        break;
+                        input[i][j] = this.importDataAsSamples[i * chunkSize + j];
+                    } else {
+                        // fill with zeros
+                        input[i][j] = 0.0;
                     }
                 }
                 fft.Run(input[i], result[i]);

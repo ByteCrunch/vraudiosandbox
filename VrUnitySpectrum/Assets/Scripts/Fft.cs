@@ -17,7 +17,7 @@ public class Fft
     };
     private WindowType winfunc;
     private int fftLength;
-    private double[] fftWindow, fout, fin;
+    private double[] fftWindow, dout, din;
     private System.IntPtr pin, pout, fplan;
     public double ampCf, pwrCf;
 
@@ -27,18 +27,17 @@ public class Fft
         this.pin = fftw.malloc(n * 2 * sizeof(double));
         this.pout = fftw.malloc(n * 2 * sizeof(double));
 
-        this.fin = new double[n];
-        this.fout = new double[n];
+        this.din = new double[n];
+        this.dout = new double[n/2+1];
         this.fftWindow = new double[n];
         
         this.winfunc = wt;
         this.MakeFftWindow();
 
         for (int i = 0; i < n; i++)
-            this.fin[i] = 0.0;
+            this.din[i] = 0.0;
 
-        // http://www.fftw.org/fftw3_doc/The-1d-Real_002ddata-DFT.html#The-1d-Real_002ddata-DFT
-        this.fplan = fftw.dft_r2c_1d(n, this.pin, this.pout, fftw_flags.Estimate);
+        this.fplan = fftw.dft_1d(n, this.pin, this.pout, fftw_direction.Forward, fftw_flags.Measure);
     }
 
     private void MakeFftWindow()
@@ -89,15 +88,16 @@ public class Fft
 
     private void DoFft(double[] outp)
     {
-        double c = this.fftLength * this.fftLength;
+        double c = this.fftLength;
         double cf = 2.0 / 32767.0;
 
-        Marshal.Copy(this.fin, 0, this.pin, this.fftLength);
+        Marshal.Copy(this.din, 0, this.pin, this.fftLength);
         fftwf.execute(this.fplan);
 
-        Marshal.Copy(this.pout, this.fout, 0, this.fftLength);
+        Marshal.Copy(this.pout, this.dout, 0, this.fftLength / 2 + 1);
         for (int i = 0; i < this.fftLength / 2; i++)
-            outp[i] = cf * System.Math.Sqrt((this.fout[2 * i] * this.fout[2 * i] + this.fout[2 * i + 1] * this.fout[2 * i + 1]) / c);
+            //outp[i] = cf * System.Math.Sqrt((this.dout[2 * i] * this.dout[2 * i] + this.dout[2 * i + 1] * this.dout[2 * i + 1]) / c);
+            outp[i] = cf * System.Math.Sqrt((this.dout[i] * this.dout[i] + this.dout[i + 1] * this.dout[i + 1]) / c);
 
 
     }
@@ -105,7 +105,7 @@ public class Fft
     public void Run(double[] inp, double[] outp)
     {
         for (int i = 0; i < this.fftLength; i++)
-            this.fin[i] = inp[i] * this.fftWindow[i];
+            this.din[i] = inp[i] * this.fftWindow[i];
         this.DoFft(outp);
     }
     public void Dispose()
