@@ -43,13 +43,13 @@ public class SpectrumMesh : MonoBehaviour
         this.triangles = new int[this.audioEngine.fftData.Length][];
         this.colors = new Color32[this.audioEngine.fftData.Length][];
 
-        for (int i = 0; i < this.audioEngine.fftData.Length; i++)
+        for (int i=0; i < this.audioEngine.fftData.Length; i++)
         //for (int i=0; i < 1; i++)
         {
             // Add GOs, MFs and MRs
             this.meshObj[i] = new GameObject("spectrumMesh" + i.ToString());
             this.meshObj[i].transform.parent = this.transform;
-
+            
             this.mFilters[i] = meshObj[i].AddComponent<MeshFilter>();
             this.mFilters[i].name = "FFTData" + i.ToString();
 
@@ -60,7 +60,7 @@ public class SpectrumMesh : MonoBehaviour
             //this.meshes[i].indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; // Increase from 16bit as this would only allow 65.536 vertices per mesh
             this.meshes[i].Clear();
             this.mFilters[i].mesh = this.meshes[i];
-
+            
             // Create Spectrum polygons
             this.SetVertices(i);
             this.SetMeshColors(i);
@@ -73,12 +73,13 @@ public class SpectrumMesh : MonoBehaviour
             TextMesh textMesh = GameObject.Find("FreqLegend").GetComponent<TextMesh>();
             string frequencies = "";
 
-            for (int f=this.audioEngine.fftFrequencies.Length-1; f >= 0; f--)
+            for (int f = this.audioEngine.fftFrequencies.Length - 1; f >= 0; f--)
             {
                 frequencies += System.Math.Round(this.audioEngine.fftFrequencies[f], 2).ToString() + " Hz\n";
             }
             textMesh.text = frequencies;
         }
+
 
         //Testing
         Debug.Log(this.meshes[0].vertices.GetLength(0).ToString());
