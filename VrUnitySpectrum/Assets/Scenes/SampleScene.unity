@@ -251,7 +251,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55fbd980de426484ebae88884aa2fd46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dataScale: 3
+  dataScale: 20
   edgeLengthOfRaster: 0.006
 --- !u!1 &705507993
 GameObject:

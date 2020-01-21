@@ -145,7 +145,7 @@ public class SpectrumMesh : MonoBehaviour
         this.colors[meshIdx] = new Color32[this.vertices[meshIdx].Length];
 
         for (int i = 0; i < this.vertices[meshIdx].Length; i++)
-            this.colors[meshIdx][i] = Color.Lerp(Color.red, Color.green, this.vertices[meshIdx][i].y);
+            this.colors[meshIdx][i] = Color.Lerp(Color.green, Color.red, this.vertices[meshIdx][i].y);
 
         this.meshes[meshIdx].colors32 = this.colors[meshIdx];
     }
