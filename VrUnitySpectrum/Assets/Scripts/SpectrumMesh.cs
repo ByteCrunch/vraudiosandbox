@@ -81,16 +81,19 @@ public class SpectrumMesh : MonoBehaviour
         }
 
 
-        //Testing
-        Debug.Log(this.meshes[0].vertices.GetLength(0).ToString());
+        /*
+        // Testing output
+
         for (int i=0; i < this.meshes[0].vertices.GetLength(0); i++)
         {
             Debug.Log("<SpectrumMesh> " + this.meshes[0].vertices[i].x.ToString() + " " + this.meshes[0].vertices[i].y.ToString() + " " + this.meshes[0].vertices[i].z.ToString());
         }
+        */
     }
 
     /*
-    // Visualize for Scene view and testing (huge performance killer for lots of vertices)
+    // Visualize vertices for Scene view and testing
+    // (huge performance killer for lots of vertices, will freeze unity if used for the whole fft data)
     private void OnDrawGizmos()
     {
         if (this.audioEngine == null)
