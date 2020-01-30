@@ -5,6 +5,17 @@ using UnityEngine;
 
 public class AudioEngine : MonoBehaviour
 {
+    public enum testFiles
+    {
+        sinesweep1HzTo48000Hz,
+        sine4000Hz,
+        sine100Hz,
+        test
+    }
+
+    // Dropdown in inspector for testing
+    public testFiles selectAudioTestFile;
+
     public string filePath;
 
     [HideInInspector]
@@ -24,10 +35,27 @@ public class AudioEngine : MonoBehaviour
     }
     public void LoadAudioData()
     {
-        //TODO this is still hardcoded for testing
-        //filePath = @"E:\Temp\test.wav";
-        //filePath = @"E:\Temp\sinus4000hz-10db.wav";
-        filePath = @"E:\Temp\audiocheck.net_hdsweep_1Hz_48000Hz_-3dBFS_30s.wav";
+        switch (this.selectAudioTestFile)
+        {
+            case testFiles.sinesweep1HzTo48000Hz:
+                this.filePath = Application.dataPath + "/Resources/Audio/" + "sinesweep_1Hz_48000Hz_-3dBFS_30s.wav";
+                break;
+
+            case testFiles.sine4000Hz:
+                this.filePath = Application.dataPath + "/Resources/Audio/" + "sinus4000hz-10db.wav";
+                break;
+
+            case testFiles.sine100Hz:
+                this.filePath = Application.dataPath + "/Resources/Audio/" + "sinus100hz-10db.wav";
+                break;
+
+            case testFiles.test:
+                this.filePath = Application.dataPath + "/Resources/Audio/" + "test.wav";
+                break;
+        }
+
+        // Manual override
+        //this.filePath = @"E:\Temp\test.wav";
 
         // Read in wav file and convert into an array of samples
         NAudio.Wave.WaveFileReader waveFileReader = new NAudio.Wave.WaveFileReader(filePath);
