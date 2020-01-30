@@ -69,6 +69,7 @@ public class SpectrumMesh : MonoBehaviour
             this.meshes[i].RecalculateNormals();
             this.meshes[i].Optimize();
 
+            /*
             // Text for frequency legend - very crude code for testing
             TextMesh textMesh = GameObject.Find("FreqLegend").GetComponent<TextMesh>();
             string frequencies = "";
@@ -78,6 +79,7 @@ public class SpectrumMesh : MonoBehaviour
                 frequencies += System.Math.Round(this.audioEngine.fftFrequencies[f], 2).ToString() + " Hz\n";
             }
             textMesh.text = frequencies;
+            */
         }
 
 
