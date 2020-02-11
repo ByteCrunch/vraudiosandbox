@@ -21,9 +21,6 @@ public class AudioEngine : MonoBehaviour
     [HideInInspector]
     public double[][] fftData;
 
-    private NAudio.Wave.WaveFileReader waveReader;
-    private NAudio.Wave.WaveOut waveOut;
-
     private double[] importDataAsSamples;
     public int importSampleRate;
     public int importBitDepth;
@@ -35,9 +32,6 @@ public class AudioEngine : MonoBehaviour
     {
         this.LoadAudioData();
         this.DoFft();
-        //this.Play();
-
-        this.waveReader.Close();
     }
     public void LoadAudioData()
     {
@@ -64,13 +58,14 @@ public class AudioEngine : MonoBehaviour
         //this.filePath = @"E:\Temp\test.wav";
 
         // Read in wav file and convert into an array of samples
-        this.waveReader = new NAudio.Wave.WaveFileReader(this.filePath);
-        int numOfBytes = (int)this.waveReader.Length;
-        this.importSampleRate = this.waveReader.WaveFormat.SampleRate;
-        this.importBitDepth = this.waveReader.WaveFormat.BitsPerSample;
+        NAudio.Wave.WaveFileReader waveFileReader = new NAudio.Wave.WaveFileReader(filePath);
+        int numOfBytes = (int)waveFileReader.Length;
+        this.importSampleRate = waveFileReader.WaveFormat.SampleRate;
+        this.importBitDepth = waveFileReader.WaveFormat.BitsPerSample;
 
         byte[] importDataAsBytes = new byte[numOfBytes];
-        this.waveReader.Read(importDataAsBytes, 0, numOfBytes);
+        waveFileReader.Read(importDataAsBytes, 0, numOfBytes);
+        waveFileReader.Close();
 
 
         // Convert into double array
@@ -113,23 +108,6 @@ public class AudioEngine : MonoBehaviour
             default:
                 //TODO do some error handling here
                 break;
-        }
-    }
-
-    public void Play()
-    {
-        if (this.waveOut == null)
-        {
-            LoopStream loop = new LoopStream(this.waveReader);
-            this.waveOut = new NAudio.Wave.WaveOut(); //Waveout will try to use Windows.Forms for error dialog boxes - this is not supported under Unity Mono (will display "could not register the window class, win 32 error 0")
-            this.waveOut.Init(loop);
-            this.waveOut.Play();
-        }
-        else
-        {
-            this.waveOut.Stop();
-            this.waveOut.Dispose();
-            this.waveOut = null;
         }
     }
 
