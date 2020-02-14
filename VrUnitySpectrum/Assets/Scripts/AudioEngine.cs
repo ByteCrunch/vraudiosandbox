@@ -187,7 +187,7 @@ public class AudioEngine : MonoBehaviour
             int chunkSize = fftSize;
             int numOfChunks = (this.importDataAsSamples.Length + chunkSize - 1) / chunkSize; // integer round up
 
-            Debug.Log("numOfSamples: " + this.importDataAsSamples.Length.ToString() + " chunkSize: " + chunkSize.ToString() + " numOfChunks: " + numOfChunks.ToString() + " binResolution: " + (this.importSampleRate / fftSize).ToString() + "Hz");
+            Debug.Log("<AudioEngine> numOfSamples: " + this.importDataAsSamples.Length.ToString() + " chunkSize: " + chunkSize.ToString() + " numOfChunks: " + numOfChunks.ToString() + " binResolution: " + (this.importSampleRate / fftSize).ToString() + "Hz");
 
             // Create map of frequencies for the bins
             this.fftFrequencies = new double[this.fftBinCount];

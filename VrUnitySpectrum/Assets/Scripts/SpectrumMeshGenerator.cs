@@ -29,8 +29,6 @@ public class SpectrumMeshGenerator : MonoBehaviour
     private void Start()
     {
         this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
-        Debug.Log("<SpectrumMesh> fftBinCount: " + this.audioEngine.fftBinCount.ToString());
-        Debug.Log("<SpectrumMesh> fftData.Length: " + this.audioEngine.fftData.Length.ToString());
 
         this.meshObj = new GameObject[this.audioEngine.fftData.Length];
         this.mFilters = new MeshFilter[this.audioEngine.fftData.Length];
