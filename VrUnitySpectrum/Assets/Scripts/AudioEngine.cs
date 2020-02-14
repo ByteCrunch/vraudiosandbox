@@ -23,6 +23,7 @@ public class AudioEngine : MonoBehaviour
 
     private NAudio.Wave.WaveFileReader waveReader;
     private NAudio.Wave.WaveOut waveOut;
+    private LoopStream loopStream;
 
     private double[] importDataAsSamples;
     public int importSampleRate;
@@ -30,15 +31,13 @@ public class AudioEngine : MonoBehaviour
     public double[] fftFrequencies;
     public int fftBinCount;
 
+    public bool isPlaying;
+
     // Make sure audio engine is loaded before Start() routines of other GameObjects
     void Awake()
     {
         this.LoadAudioData();
         this.DoFft();
-
-        //this.Play();
-        this.waveReader.Close();
-
     }
     public void LoadAudioData()
     {
@@ -119,18 +118,57 @@ public class AudioEngine : MonoBehaviour
 
     public void Play()
     {
+        Debug.Log("<AudioEngine> Play");
         if (this.waveOut == null)
         {
-            LoopStream loop = new LoopStream(this.waveReader);
-            this.waveOut = new NAudio.Wave.WaveOut(); //Waveout will try to use Windows.Forms for error dialog boxes - this is not supported under Unity Mono (will display "could not register the window class, win 32 error 0")
-            this.waveOut.Init(loop);
+            this.loopStream = new LoopStream(this.waveReader);
+            this.waveOut = new NAudio.Wave.WaveOut(); //TODO: find fix. Waveout will try to use Windows.Forms for error dialog boxes - this is not supported under Unity Mono (will display "could not register the window class, win 32 error 0")
+            this.waveOut.PlaybackStopped += OnPlaybackStopped;
+            this.waveOut.Init(this.loopStream);
+            this.waveOut.Play();
+        } else {
             this.waveOut.Play();
         }
-        else
+        this.isPlaying = true;
+    }
+
+    public void Stop() 
+    {
+        this.waveOut.Stop();
+        this.isPlaying = false;
+        Debug.Log("<AudioEngine> Stop");
+    }
+
+    private void OnPlaybackStopped(object sender, System.EventArgs e)
+    {
+        Debug.Log("<AudioEngine> " +e.ToString());
+    }
+
+    public void SetAudioLooping(bool loop)
+    {
+        this.loopStream.EnableLooping = loop;
+    }
+
+    public void Rewind()
+    {
+        Debug.Log("<AudioEngine> Rewind");
+        if (this.waveOut != null)
         {
-            this.waveOut.Stop();
-            this.waveOut.Dispose();
-            this.waveOut = null;
+            this.waveReader.Position = 0;
+        }
+    }
+
+    public void StopAudioEngine()
+    {
+        this.waveOut.Dispose();
+        this.waveOut = null;
+        this.isPlaying = false;
+
+        if (this.waveReader != null)
+        {
+            this.waveReader.Close();
+            this.waveReader.Dispose();
+            this.waveReader = null;
         }
     }
 
@@ -190,6 +228,25 @@ public class AudioEngine : MonoBehaviour
 
     void Update()
     {
-        
+        if (Input.GetButtonDown("PlayStop"))
+        {
+            if (!this.isPlaying)
+            {
+                this.Play();
+            } else {
+                this.Stop();
+            }
+        }
+
+        if (Input.GetButtonDown("Rewind"))
+        {
+            this.Rewind();
+        }
+    }
+
+    void OnApplicationQuit()
+    {
+        Debug.Log("Exit");
+        this.StopAudioEngine();
     }
 }
