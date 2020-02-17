@@ -89,6 +89,38 @@ namespace Valve.VR
             }
         }
         
+        public virtual SteamVR_Action_Boolean PlayStop
+        {
+            get
+            {
+                return SteamVR_Actions.default_PlayStop;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean Rewind
+        {
+            get
+            {
+                return SteamVR_Actions.default_Rewind;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean ScaleMeshYDec
+        {
+            get
+            {
+                return SteamVR_Actions.default_ScaleMeshYDec;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean ScaleMeshYInc
+        {
+            get
+            {
+                return SteamVR_Actions.default_ScaleMeshYInc;
+            }
+        }
+        
         public virtual SteamVR_Action_Vibration Haptic
         {
             get

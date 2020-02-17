@@ -41,6 +41,22 @@
       "requirement": "optional"
     },
     {
+      "name": "/actions/default/in/PlayStop",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/Rewind",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/ScaleMeshYDec",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/ScaleMeshYInc",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
     },
@@ -77,7 +93,7 @@
   "action_sets": [
     {
       "name": "/actions/default",
-      "usage": "single"
+      "usage": "leftright"
     },
     {
       "name": "/actions/platformer",
@@ -142,7 +158,11 @@
       "/actions/default/in/SkeletonRightHand": "Skeleton (Right)",
       "/actions/default/in/Teleport": "Teleport",
       "/actions/default/out/Haptic": "Haptic",
-      "/actions/platformer/in/Jump": "Jump"
+      "/actions/platformer/in/Jump": "Jump",
+      "/actions/default/in/Rewind": "Rewind",
+      "/actions/default/in/ScaleMeshYDec": "ScaleMeshYDec",
+      "/actions/default/in/ScaleMeshYInc": "ScaleMeshYInc",
+      "/actions/default/in/PlayStop": "PlayStop"
     }
   ]
 }

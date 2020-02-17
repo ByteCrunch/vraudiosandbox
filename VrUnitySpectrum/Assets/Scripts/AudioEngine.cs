@@ -160,9 +160,11 @@ public class AudioEngine : MonoBehaviour
 
     public void StopAudioEngine()
     {
-        this.waveOut.Dispose();
-        this.waveOut = null;
-        this.isPlaying = false;
+        if (this.waveOut != null)
+        {
+            this.waveOut.Dispose();
+            this.waveOut = null;
+        }
 
         if (this.waveReader != null)
         {
@@ -170,6 +172,8 @@ public class AudioEngine : MonoBehaviour
             this.waveReader.Dispose();
             this.waveReader = null;
         }
+
+        this.isPlaying = false;
     }
 
 
@@ -226,7 +230,7 @@ public class AudioEngine : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
         if (Input.GetButtonDown("PlayStop"))
         {

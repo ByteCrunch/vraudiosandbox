@@ -23,11 +23,10 @@ public class FloorHelper : MonoBehaviour
             // Scale floor to spectrum dimensions
             Vector3 a = refBounds.size;
             Vector3 b = floorRenderer.bounds.size;
-            Vector3 scale = new Vector3(a.x / b.x, 1, a.z / b.z);
-            gameObject.transform.localScale = scale;
+            gameObject.transform.localScale.Set(a.x / b.x, 1, a.z / b.z);
 
             // Re-position floor
-            gameObject.transform.position = new Vector3 (refBounds.center.x, 0, refBounds.center.z);
+            gameObject.transform.position.Set(refBounds.center.x, 0, refBounds.center.z);
         }
     }
 }

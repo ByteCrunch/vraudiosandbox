@@ -26,6 +26,19 @@ public class SpectrumMeshGenerator : MonoBehaviour
         
     }
 
+    private void Update()
+    {
+        if (Input.GetButtonDown("ScaleMeshYDec"))
+        {
+            this.ScaleMeshY(-0.05f);
+        }
+
+        if (Input.GetButtonDown("ScaleMeshYInc"))
+        {
+            this.ScaleMeshY(0.05f);
+        }
+    }
+
     private void Start()
     {
         this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
@@ -189,5 +202,12 @@ public class SpectrumMeshGenerator : MonoBehaviour
 
         }
         this.meshes[meshIdx].triangles = this.triangles[meshIdx];
+    }
+
+    public void ScaleMeshY(float offset)
+    {
+        Vector3 scale = gameObject.transform.localScale;
+        Debug.Log(scale.ToString());
+        gameObject.transform.localScale.Set(scale.x, scale.y + offset, scale.z);
     }
 }
