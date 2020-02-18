@@ -20,12 +20,6 @@ public class SpectrumMeshGenerator : MonoBehaviour
     private int countOfRasterVertices;
     private int countOfPeakVertices;
 
-
-    private void Awake()
-    {
-        
-    }
-
     private void Update()
     {
         if (Input.GetButtonDown("ScaleMeshYDec"))
@@ -40,6 +34,11 @@ public class SpectrumMeshGenerator : MonoBehaviour
     }
 
     private void Start()
+    {
+
+    }
+
+    public void Init()
     {
         this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
 

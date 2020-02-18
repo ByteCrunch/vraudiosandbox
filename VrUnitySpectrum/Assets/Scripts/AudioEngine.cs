@@ -1,10 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using NAudio;
+using SimpleFileBrowser;
 using UnityEngine;
 
 public class AudioEngine : MonoBehaviour
 {
+    // just for testing in Unity play mode
     public enum testFiles
     {
         sinesweep1HzTo48000Hz,
@@ -12,8 +14,6 @@ public class AudioEngine : MonoBehaviour
         sine100Hz,
         test
     }
-
-    // Dropdown in inspector for testing
     public testFiles selectAudioTestFile;
 
     public string filePath;
@@ -36,32 +36,55 @@ public class AudioEngine : MonoBehaviour
     // Make sure audio engine is loaded before Start() routines of other GameObjects
     void Awake()
     {
-        this.LoadAudioData();
-        this.DoFft();
+        if (!Application.isEditor)
+        {
+            FileBrowser.SetFilters(true, new FileBrowser.Filter("Audio", ".wav", ".aiff", ".mp3", ".m4a", ".ogg"));
+            FileBrowser.AddQuickLink("Examples", Application.dataPath + "/Resources/Audio/", null);
+            StartCoroutine(ShowLoadDialogCoroutine());
+        } else
+        {
+            this.LoadAudioData();
+        }
     }
+
+    IEnumerator ShowLoadDialogCoroutine()
+    {
+        // Show a load file dialog and wait for a response from user
+        yield return FileBrowser.WaitForLoadDialog(false, null, "Load audio file", "Load");
+
+        Debug.Log(FileBrowser.Success + " " + FileBrowser.Result);
+
+        if (FileBrowser.Success)
+        {
+            this.filePath = FileBrowser.Result;
+            this.LoadAudioData();
+        }
+    }
+
     public void LoadAudioData()
     {
-        switch (this.selectAudioTestFile)
+        // only for testing in Unity editor
+        if (Application.isEditor)
         {
-            case testFiles.sinesweep1HzTo48000Hz:
-                this.filePath = Application.dataPath + "/Resources/Audio/" + "sinesweep_1Hz_48000Hz_-3dBFS_30s.wav";
-                break;
+            switch (this.selectAudioTestFile)
+            {
+                case testFiles.sinesweep1HzTo48000Hz:
+                    this.filePath = Application.dataPath + "/Resources/Audio/" + "sinesweep_1Hz_48000Hz_-3dBFS_30s.wav";
+                    break;
 
-            case testFiles.sine4000Hz:
-                this.filePath = Application.dataPath + "/Resources/Audio/" + "sinus4000hz-10db.wav";
-                break;
+                case testFiles.sine4000Hz:
+                    this.filePath = Application.dataPath + "/Resources/Audio/" + "sinus4000hz-10db.wav";
+                    break;
 
-            case testFiles.sine100Hz:
-                this.filePath = Application.dataPath + "/Resources/Audio/" + "sinus100hz-10db.wav";
-                break;
+                case testFiles.sine100Hz:
+                    this.filePath = Application.dataPath + "/Resources/Audio/" + "sinus100hz-10db.wav";
+                    break;
 
-            case testFiles.test:
-                this.filePath = Application.dataPath + "/Resources/Audio/" + "test.wav";
-                break;
+                case testFiles.test:
+                    this.filePath = Application.dataPath + "/Resources/Audio/" + "test.wav";
+                    break;
+            }
         }
-
-        // Manual override
-        //this.filePath = @"E:\Temp\test.wav";
 
         // Read in wav file and convert into an array of samples
         this.waveReader = new NAudio.Wave.WaveFileReader(this.filePath);
@@ -114,6 +137,11 @@ public class AudioEngine : MonoBehaviour
                 //TODO do some error handling here
                 break;
         }
+
+        this.DoFft();
+
+        SpectrumMeshGenerator spectrum = GameObject.Find("SpectrumMesh").GetComponent<SpectrumMeshGenerator>();
+        spectrum.Init();
     }
 
     public void Play()
