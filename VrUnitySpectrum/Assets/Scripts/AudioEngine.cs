@@ -28,21 +28,47 @@ public class AudioEngine : MonoBehaviour
     private double[] importDataAsSamples;
     public int importSampleRate;
     public int importBitDepth;
+    public double importDurationInMs;
     public double[] fftFrequencies;
     public int fftBinCount;
 
     public bool isPlaying;
 
+    private SpectrumMeshGenerator spectrum;
+
     // Make sure audio engine is loaded before Start() routines of other GameObjects
     void Awake()
     {
+
+        this.spectrum = GameObject.Find("SpectrumMesh").GetComponent<SpectrumMeshGenerator>();
+
         if (!Application.isEditor)
         {
+            // Show file dialog when in standalone mode
             FileBrowser.SetFilters(true, new FileBrowser.Filter("Audio", ".wav", ".aiff", ".mp3", ".m4a", ".ogg"));
             FileBrowser.AddQuickLink("Examples", Application.dataPath + "/Resources/Audio/", null);
             StartCoroutine(ShowLoadDialogCoroutine());
-        } else
-        {
+        } else {
+
+            // Load audio data based on selection in AudioEngine component in Unity editor mode
+            switch (this.selectAudioTestFile)
+            {
+                case testFiles.sinesweep1HzTo48000Hz:
+                    this.filePath = Application.dataPath + "/Resources/Audio/" + "sinesweep_1Hz_48000Hz_-3dBFS_30s.wav";
+                    break;
+
+                case testFiles.sine4000Hz:
+                    this.filePath = Application.dataPath + "/Resources/Audio/" + "sinus4000hz-10db.wav";
+                    break;
+
+                case testFiles.sine100Hz:
+                    this.filePath = Application.dataPath + "/Resources/Audio/" + "sinus100hz-10db.wav";
+                    break;
+
+                case testFiles.test:
+                    this.filePath = Application.dataPath + "/Resources/Audio/" + "test.wav";
+                    break;
+            }
             this.LoadAudioData();
         }
     }
@@ -63,34 +89,12 @@ public class AudioEngine : MonoBehaviour
 
     public void LoadAudioData()
     {
-        // only for testing in Unity editor
-        if (Application.isEditor)
-        {
-            switch (this.selectAudioTestFile)
-            {
-                case testFiles.sinesweep1HzTo48000Hz:
-                    this.filePath = Application.dataPath + "/Resources/Audio/" + "sinesweep_1Hz_48000Hz_-3dBFS_30s.wav";
-                    break;
-
-                case testFiles.sine4000Hz:
-                    this.filePath = Application.dataPath + "/Resources/Audio/" + "sinus4000hz-10db.wav";
-                    break;
-
-                case testFiles.sine100Hz:
-                    this.filePath = Application.dataPath + "/Resources/Audio/" + "sinus100hz-10db.wav";
-                    break;
-
-                case testFiles.test:
-                    this.filePath = Application.dataPath + "/Resources/Audio/" + "test.wav";
-                    break;
-            }
-        }
-
         // Read in wav file and convert into an array of samples
         this.waveReader = new NAudio.Wave.WaveFileReader(this.filePath);
         int numOfBytes = (int)this.waveReader.Length;
         this.importSampleRate = this.waveReader.WaveFormat.SampleRate;
         this.importBitDepth = this.waveReader.WaveFormat.BitsPerSample;
+        this.importDurationInMs = this.waveReader.TotalTime.TotalMilliseconds;
 
         byte[] importDataAsBytes = new byte[numOfBytes];
         this.waveReader.Read(importDataAsBytes, 0, numOfBytes);
@@ -139,9 +143,7 @@ public class AudioEngine : MonoBehaviour
         }
 
         this.DoFft();
-
-        SpectrumMeshGenerator spectrum = GameObject.Find("SpectrumMesh").GetComponent<SpectrumMeshGenerator>();
-        spectrum.Init();
+        this.spectrum.Init();
     }
 
     public void Play()
@@ -164,12 +166,22 @@ public class AudioEngine : MonoBehaviour
     {
         this.waveOut.Stop();
         this.isPlaying = false;
+        this.spectrum.ResetMeshColors();
+        
         Debug.Log("<AudioEngine> Stop");
     }
 
     private void OnPlaybackStopped(object sender, System.EventArgs e)
     {
         Debug.Log("<AudioEngine> " +e.ToString());
+    }
+
+    public double GetPositionInMs()
+    {
+        long bytePos = this.loopStream.Position;
+        double ms = bytePos * 1000.0 / this.importBitDepth / 1 * 8 / this.importSampleRate; //1 for mono, TODO multichannel
+
+        return ms;
     }
 
     public void SetAudioLooping(bool loop)
@@ -183,6 +195,7 @@ public class AudioEngine : MonoBehaviour
         if (this.waveOut != null)
         {
             this.waveReader.Position = 0;
+            this.spectrum.ResetMeshColors();
         }
     }
 

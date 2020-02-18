@@ -31,12 +31,25 @@ public class SpectrumMeshGenerator : MonoBehaviour
         {
             this.ScaleMeshY(0.05f);
         }
+
+        // Color meshes according to play position
+        if (this.audioEngine.isPlaying)
+        {
+            double msPerChunk = this.audioEngine.importDurationInMs / this.audioEngine.fftData.Length;
+            int posIdx = (int)(this.audioEngine.GetPositionInMs() / msPerChunk);
+
+            for (int i = 0; i < posIdx; i++)
+            {
+                this.mRenderers[i].material = Resources.Load("Materials/SpectrumMatPlaying") as Material;
+            }
+        }
     }
 
     private void Start()
     {
 
     }
+
 
     public void Init()
     {
@@ -161,6 +174,14 @@ public class SpectrumMeshGenerator : MonoBehaviour
         this.meshes[meshIdx].vertices = this.vertices[meshIdx];
     }
 
+    public void ResetMeshColors()
+    {
+        for (int i = 0; i < this.audioEngine.fftData.Length; i++)
+        {
+            this.mRenderers[i].material = Resources.Load("Materials/SpectrumMat") as Material;
+        }
+    }
+
     private void SetMeshColors(int meshIdx)
     {
         this.colors[meshIdx] = new Color32[this.vertices[meshIdx].Length];
@@ -173,7 +194,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
         }
 
         for (int i = 0; i < this.vertices[meshIdx].Length; i++)
-        this.colors[meshIdx][i] = Color.Lerp(Color.green, Color.red, this.vertices[meshIdx][i].y / max);
+            this.colors[meshIdx][i] = Color.Lerp(Color.green, Color.red, this.vertices[meshIdx][i].y / max);
 
         this.meshes[meshIdx].colors32 = this.colors[meshIdx];
     }
