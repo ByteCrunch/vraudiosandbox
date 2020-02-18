@@ -42,6 +42,12 @@ public class SpectrumMeshGenerator : MonoBehaviour
             {
                 this.mRenderers[i].material = Resources.Load("Materials/SpectrumMatPlaying") as Material;
             }
+
+            // workaround until loopstream event will work to trigger reset of spectrum material
+            for (int i = posIdx; i < this.audioEngine.fftData.Length; i++)
+            {
+                this.mRenderers[i].material = Resources.Load("Materials/SpectrumMat") as Material;
+            }
         }
     }
 
