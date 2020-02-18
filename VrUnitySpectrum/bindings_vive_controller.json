@@ -213,9 +213,6 @@
             "center": {
               "output": "/actions/default/in/playstop"
             },
-            "east": {
-              "output": "/actions/default/in/rewind"
-            },
             "north": {
               "output": "/actions/default/in/scalemeshyinc"
             },
@@ -223,7 +220,7 @@
               "output": "/actions/default/in/scalemeshydec"
             },
             "west": {
-              "output": "/actions/default/in/stop"
+              "output": "/actions/default/in/rewind"
             }
           }
         }
