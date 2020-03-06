@@ -1,5 +1,7 @@
 # VrUnitySpectrum
 
+![Input mapping htc VIVE controllers](images/teleport2-web.png)
+
 VrUnitySpectrum is a student project for the Hochschule für Musik Karlsruhe to visualize FFT spectrum data in VR.
 
 Author: Manuel-Philippe Hergenröder
