@@ -19,14 +19,24 @@ Author: Manuel-Philippe Hergenröder
 ---
 
 ### Getting started
-Without a Head-Mounted-Display you can just hit Play in Unity and navigate with WASD and your mouse.
-(ignore errors regarding missing Hmd).
 
-![Input mapping htc VIVE controllers](images/vive-controller-web.png)
+#### In Unity
+Just hit play.
 
 When stopped you can change the input audio file via the inspector of the "Audio"-GameObject in the "Audio Engine"-Component.
 
-(Currently) you can only start playback on the keyboard. Hit _space_ for play/stop and _backspace_ for rewind.
+#### With the standalone player
+After launching _VrUnitySpectrum.exe_ there will be a filechooser. You can select an audio file - see "Examples" to load one of the bundled files.
 
+#### Controls
+Use both of htc VIVE controllers for navigation and playback:
+
+![Input mapping htc VIVE controllers](images/vive-controller-web.png)
+
+Without a Head-Mounted-Display you can just hit Play in Unity and navigate with WASD and change the camera with your mouse (while holding down right-mouse-button)
+You can start/stop playback on the keyboard with _space_, press _backspace_ to rewind.
+
+You can exit the program with _ALT+F4_.
+
+### Misc
 Currently only mono audio files with 8, 16, 24, 32 or 64 bits per sample are supported. For now I've only tested WAV PCM files with sampling rates 44.1kHz, 48 kHz and 96 kHz. NAudio should also be able to read in: AIFF, MP3 (using ACM, DMO or MFT), G.711 mu-law and a-law, ADPCM, G.722, WMA, AAC, MP4 and more others with Media Foundation (untested).
-
