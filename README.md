@@ -6,6 +6,8 @@ VrUnitySpectrum is a student project for the Hochschule für Musik Karlsruhe to 
 
 Author: Manuel-Philippe Hergenröder
 
+[Project documentation (german)](Visualisierung%20von%20Audio-Daten%20in%20VR%20-%20Dokumentation.pdf)
+
 ---
 
 ### Requirements
