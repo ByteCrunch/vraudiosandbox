@@ -12,12 +12,15 @@ public class SpectrumMeshGenerator : MonoBehaviour
     private GameObject[] meshObj;
     private MeshFilter[] mFilters;
     private MeshRenderer[] mRenderers;
-    private Mesh[] meshes;
+    public Mesh[] meshes;
+
     private Vector3[][] vertices;
     private int[][] triangles;
     private Color32[][] colors;
 
     private int countOfRasterVertices;
+    public int startIndexOfPeakVertices { get { return this.countOfRasterVertices; } }
+
     private int countOfPeakVertices;
 
     private void Update()
@@ -27,7 +30,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
             this.ScaleMeshY(-0.05f);
         }
 
-        if (Input.GetButtonDown("ScaleMeshYInc"))
+        if (Input.GetButtonUp("ScaleMeshYInc"))
         {
             this.ScaleMeshY(0.05f);
         }
@@ -60,7 +63,11 @@ public class SpectrumMeshGenerator : MonoBehaviour
     public void Init()
     {
         this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
+        this.GenerateMeshFromAudioData();
+    }
 
+    public void GenerateMeshFromAudioData()
+    {
         this.meshObj = new GameObject[this.audioEngine.fftData.Length];
         this.mFilters = new MeshFilter[this.audioEngine.fftData.Length];
         this.mRenderers = new MeshRenderer[this.audioEngine.fftData.Length];
@@ -83,7 +90,6 @@ public class SpectrumMeshGenerator : MonoBehaviour
             this.mRenderers[i].material = Resources.Load("Materials/SpectrumMat") as Material;
 
             this.meshes[i] = new Mesh();
-            //this.meshes[i].indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; // Increase from 16bit as this would only allow 65.536 vertices per mesh
             this.meshes[i].Clear();
             this.mFilters[i].mesh = this.meshes[i];
             
@@ -93,7 +99,11 @@ public class SpectrumMeshGenerator : MonoBehaviour
             this.SetTriangles(i);
             this.meshes[i].RecalculateBounds();
             this.meshes[i].RecalculateNormals();
-            this.meshes[i].Optimize();
+
+            // It is important not to call Mesh.Optimize() here, because it will re-order the mesh vertices! 
+            // Only Mesh.OptimizeIndexBuffers is uncritical -
+            // Mesh.Optimize() will basically also call Mesh.OptimizeReorderVertexBuffer() which will mess up the order and f*ck things up I depend on later.
+            this.meshes[i].OptimizeIndexBuffers();
 
             /*
             // Text for frequency legend - very crude code for testing
@@ -108,15 +118,8 @@ public class SpectrumMeshGenerator : MonoBehaviour
             */
         }
 
-
-        /*
-        // Testing output
-
-        for (int i=0; i < this.meshes[0].vertices.GetLength(0); i++)
-        {
-            Debug.Log("<SpectrumMesh> " + this.meshes[0].vertices[i].x.ToString() + " " + this.meshes[0].vertices[i].y.ToString() + " " + this.meshes[0].vertices[i].z.ToString());
-        }
-        */
+        SpectrumDeformer deformer = GameObject.Find("SpectrumMesh").GetComponent<SpectrumDeformer>();
+        deformer.MeshGenerated();
     }
 
     /*
@@ -222,6 +225,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
             this.triangles[meshIdx][i + 6] = this.countOfRasterVertices + i / 12;
             this.triangles[meshIdx][i + 7] = this.audioEngine.fftBinCount + 1 + i / 12;
             this.triangles[meshIdx][i + 8] = this.audioEngine.fftBinCount + 2 + i / 12;
+
             this.triangles[meshIdx][i + 9] = this.countOfRasterVertices + i / 12;
             this.triangles[meshIdx][i + 10] = 1 + i / 12;
             this.triangles[meshIdx][i + 11] = i / 12 ;
