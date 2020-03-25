@@ -19,22 +19,26 @@ public class AudioEngine : MonoBehaviour
     public string filePath;
 
     [HideInInspector]
-    public double[][] fftData;
+    public float[][] fftData;
 
     private NAudio.Wave.WaveFileReader waveReader;
     private NAudio.Wave.WaveOut waveOut;
     private LoopStream loopStream;
 
-    private double[] importDataAsSamples;
+    private float[] audioData;
+    private byte[] playbackBuffer;
+
     public int importSampleRate;
     public int importBitDepth;
     public double importDurationInMs;
+    public int importChannels;
     public double[] fftFrequencies;
     public int fftBinCount;
 
     public bool isPlaying;
 
     private SpectrumMeshGenerator spectrum;
+    private Fft fft;
 
     // Make sure audio engine is loaded before Start() routines of other GameObjects
     void Awake()
@@ -89,57 +93,29 @@ public class AudioEngine : MonoBehaviour
 
     public void LoadAudioData()
     {
-        // Read in wav file and convert into an array of samples
+        // Read in wav file and convert into a float[] of samples
         this.waveReader = new NAudio.Wave.WaveFileReader(this.filePath);
         int numOfBytes = (int)this.waveReader.Length;
+
         this.importSampleRate = this.waveReader.WaveFormat.SampleRate;
         this.importBitDepth = this.waveReader.WaveFormat.BitsPerSample;
+        this.importChannels = this.waveReader.WaveFormat.Channels;
         this.importDurationInMs = this.waveReader.TotalTime.TotalMilliseconds;
 
-        byte[] importDataAsBytes = new byte[numOfBytes];
-        this.waveReader.Read(importDataAsBytes, 0, numOfBytes);
+        long numOfSamples = this.waveReader.SampleCount * this.importChannels;
+        this.audioData = new float[numOfSamples];
 
+        float[] sample;
+        int pos = 0;
 
-        // Convert into double array
-        // 8, 16, 24, 32 and 64 bits per sample are supported for now
-        int numOfSamples = numOfBytes / (this.importBitDepth / 8);
-        this.importDataAsSamples = new double[numOfSamples];
-
-        switch (this.importBitDepth)
+        while ((sample = this.waveReader.ReadNextSampleFrame()) != null)
         {
-            case 8:
-                for (int i = 0; i < numOfSamples; i++)
-                {
-                    this.importDataAsSamples[i] = importDataAsBytes[i];
-                }
-                break;
-            case 16:
-                for (int i = 0; i < numOfSamples; i++)
-                {
-                    this.importDataAsSamples[i] = (double)System.BitConverter.ToInt16(importDataAsBytes, i);
-                }
-                break;
-            case 24:
-                for (int i = 0; i < numOfSamples - 2; i++)
-                {
-                    this.importDataAsSamples[i] = (double)(importDataAsBytes[i] + (importDataAsBytes[i + 1] << 8) + (importDataAsBytes[i + 2]) << 16);
-                }
-                break;
-            case 32:
-                for (int i = 0; i < numOfSamples; i++)
-                {
-                    this.importDataAsSamples[i] = (double)System.BitConverter.ToInt32(importDataAsBytes, i);
-                }
-                break;
-            case 64:
-                for (int i = 0; i < numOfSamples; i++)
-                {
-                    this.importDataAsSamples[i] = (double)System.BitConverter.ToInt64(importDataAsBytes, i);
-                }
-                break;
-            default:
-                //TODO do some error handling here
-                break;
+            if (sample.Length > 1) {
+                //TODO multi channel support - only take first channel for now
+                Debug.Log("<AudioEngine> multi-channel audio files are not supported right now - so only first channel is used, number of channels: " + this.importChannels.ToString());
+            }
+            this.audioData[pos] = sample[0];
+            pos++;
         }
 
         this.DoFft();
@@ -220,19 +196,15 @@ public class AudioEngine : MonoBehaviour
 
     public void DoFft()
     {
-        if (this.importDataAsSamples != null && this.importDataAsSamples.Length > 0)
+        if (this.audioData != null && this.audioData.Length > 0)
         {
             int fftSize = (int)(this.importSampleRate * 0.0232199546485261); // magic number taken from 44.100 Hz / 1024
-            //int fftSize = 2048;
             this.fftBinCount = fftSize / 2;
 
             // Calculate size of chunk that will be sent to FFT routine
-            //int chunkSize = this.importSampleRate / 2 / 100; // 50ms
-            //int chunkSize = this.importSampleRate / 2; // 500ms
-            int chunkSize = fftSize;
-            int numOfChunks = (this.importDataAsSamples.Length + chunkSize - 1) / chunkSize; // integer round up
+            int numOfChunks = (this.audioData.Length + fftSize - 1) / fftSize; // integer round up
 
-            Debug.Log("<AudioEngine> numOfSamples: " + this.importDataAsSamples.Length.ToString() + " chunkSize: " + chunkSize.ToString() + " numOfChunks: " + numOfChunks.ToString() + " binResolution: " + (this.importSampleRate / fftSize).ToString() + "Hz");
+            Debug.Log("<AudioEngine> numOfSamples: " + this.audioData.Length.ToString() + " fftSize: " + fftSize.ToString() + " numOfChunks: " + numOfChunks.ToString() + " binResolution: " + (this.importSampleRate / 2 / fftSize).ToString() + "Hz");
 
             // Create map of frequencies for the bins
             this.fftFrequencies = new double[this.fftBinCount];
@@ -240,34 +212,28 @@ public class AudioEngine : MonoBehaviour
                 this.fftFrequencies[i] = (double)i / this.fftBinCount * this.importSampleRate / 2;
 
             // Do FFT per chunk
-            double[][] input = new double[numOfChunks][];
-            double[][] result = new double[numOfChunks][];
-
-            Fft fft = new Fft(fftSize, Fft.WindowType.hamming, this.importSampleRate);
-
+            float[][] input = new float[numOfChunks][];
+            float[][] result = new float[numOfChunks][];
+            this.fft = new Fft(fftSize);
             for (int i = 0; i < numOfChunks; i++)
             {
-                input[i] = new double[chunkSize];
+                input[i] = new float[fftSize];
+                result[i] = new float[fftSize];
 
-                // Due to aliasing the second part would be redundant, so the ouput array is fftSize / 2 + 1
-                // as there is no need to store mirrored information
-                result[i] = new double[fftSize / 2 + 1];
-
-                for (int j = 0; j < chunkSize; j++)
+                for (int j = 0; j < fftSize; j++)
                 {
-                    // last chunk might be smaller than chunkSize or chunkSize smaller than fft size
-                    if (this.importDataAsSamples.Length > i * chunkSize + j)
+                    // last chunk might be smaller than fftSize
+                    if (this.audioData.Length > i * fftSize + j)
                     {
-                        input[i][j] = this.importDataAsSamples[i * chunkSize + j];
+                        input[i][j] = this.audioData[i * fftSize + j];
                     } else {
                         // fill with zeros
-                        input[i][j] = 0.0;
+                        input[i][j] = 0f;
                     }
                 }
-                fft.Run(input[i], result[i]);
+                fft.RunFft(input[i], result[i]);
             }
             this.fftData = result;
-            fft.Dispose();
         }
     }
 
@@ -292,6 +258,7 @@ public class AudioEngine : MonoBehaviour
     void OnApplicationQuit()
     {
         Debug.Log("Exit");
+        this.fft.Dispose();
         this.StopAudioEngine();
     }
 }

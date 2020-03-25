@@ -8,110 +8,69 @@ using FFTWSharp;
 
 public class Fft
 {
-    public enum WindowType
-    {
-        flat,
-        hann,
-        hamming,
-        blackman
-    };
-    private WindowType winfunc;
-    private int fftLength;
-    private double[] fftWindow, dout, din;
-    private System.IntPtr pin, pout, fplan;
-    public double ampCf, pwrCf;
+    System.IntPtr pin, pout;
+    private float[] fin, fout;
 
-    public Fft(int n, WindowType wt, int sampleRate)
-    {
-        this.fftLength = n;
-        this.pin = fftw.malloc(n * 2 * sizeof(double));
-        this.pout = fftw.malloc(n * 2 * sizeof(double));
+    // pointers to FFTW plan objects
+    System.IntPtr fplanForward, fplanBackward;
 
-        this.din = new double[n];
-        this.dout = new double[n/2+1];
-        this.fftWindow = new double[n];
+    private int fftSize;
+
+    public Fft(int n)
+    {
+        this.fftSize = n;
+
+        this.pin = fftwf.malloc(n * 2 * sizeof(float));
+        this.pout = fftwf.malloc(n * 2 * sizeof(float));
+
+        // TODO check if fftw_flags.Measure makes a huge difference
+        this.fplanForward = fftwf.r2r_1d(n, this.pin, this.pout, fftw_kind.R2HC, fftw_flags.Estimate);
+        this.fplanBackward = fftwf.r2r_1d(n, this.pout, this.pin, fftw_kind.HC2R, fftw_flags.Estimate);
+    }
+
+    public void RunFft(float[] input, float[] output)
+    {
+        this.fin = input;
+        this.fout = output;
+
+        Marshal.Copy(this.fin, 0, this.pin, this.fftSize);
+        fftwf.execute(this.fplanForward);
+        Marshal.Copy(this.pout, this.fout, 0, this.fftSize);
+
         
-        this.winfunc = wt;
-        this.MakeFftWindow();
-
-        for (int i = 0; i < n; i++)
-            this.din[i] = 0.0;
-
-        this.fplan = fftw.dft_1d(n, this.pin, this.pout, fftw_direction.Forward, fftw_flags.Measure);
-    }
-
-    private void MakeFftWindow()
-    {
-        double alpha, a0, a1, a2;
-
-        switch (this.winfunc)
+        for (int i = 0; i < output.Length; i++)
         {
-            case WindowType.hann:
-                for (int i = 0; i < this.fftLength; i++)
-                    fftWindow[i] = 0.5 - 0.5 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.fftLength - 1));
-                this.ampCf = 6;
-                this.pwrCf = 4.3;
-                break;
-
-            case WindowType.hamming:
-                for (int i = 0; i < this.fftLength; i++)
-                    fftWindow[i] = 0.54 - 0.46 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.fftLength - 1));
-                this.ampCf = 5.35;
-                this.pwrCf = 4.0;
-                break;
-
-            case WindowType.blackman:
-                alpha = 0.16;
-                a0 = (1.0 - alpha) / 2.0;
-                a1 = 0.5;
-                a2 = alpha / 2;
-                for (int i = 0; i < this.fftLength; i++)
-                    fftWindow[i] =
-                        a0
-                        - a1 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.fftLength - 1))
-                        + a2 * System.Math.Cos((double)i * 4 * System.Math.PI / (this.fftLength - 1));
-                this.ampCf = 7.54;
-                this.pwrCf = 5.2;
-                break;
-
-            case WindowType.flat:
-            default:
-                for (int i = 0; i < this.fftLength; i++)
-                    fftWindow[i] = 1.0;
-                this.ampCf = 0;
-                this.pwrCf = 0;
-                break;
-
+            output[i] = System.Math.Abs(output[i]);
         }
-
     }
 
-    private void DoFft(double[] outp)
+    public void RunIfft(float[] input, float[] output)
     {
-        double c = this.fftLength;
-        double cf = 2.0 / 32767.0;
+        // Transforms are unnormalized, so r2hc followed by hc2r will result in the original data multiplied by n.
+        // Furthermore, like the c2r transform, an out-of-place hc2r transform will destroy its input array. 
+        // (http://www.fftw.org/fftw3_doc/The-Halfcomplex_002dformat-DFT.html#The-Halfcomplex_002dformat-DFT)
 
-        Marshal.Copy(this.din, 0, this.pin, this.fftLength);
-        fftwf.execute(this.fplan);
+        float[] inputCopy = new float[input.Length];
+        System.Array.Copy(input, inputCopy, input.Length);
+        this.fin = inputCopy;
+        this.fout = output;
 
-        Marshal.Copy(this.pout, this.dout, 0, this.fftLength / 2 + 1);
-        for (int i = 0; i < this.fftLength / 2; i++)
-            //outp[i] = cf * System.Math.Sqrt((this.dout[2 * i] * this.dout[2 * i] + this.dout[2 * i + 1] * this.dout[2 * i + 1]) / c);
-            outp[i] = cf * System.Math.Sqrt((this.dout[i] * this.dout[i] + this.dout[i + 1] * this.dout[i + 1]) / c);
+        Marshal.Copy(this.fin, 0, this.pin, this.fftSize);
+        fftwf.execute(this.fplanBackward);
+        Marshal.Copy(this.pout, this.fout, 0, this.fftSize);
 
-
+        // divide by n
+        for (int i = 0; i < output.Length; i++)
+        {
+            output[i] /= this.fftSize;
+        }
     }
 
-    public void Run(double[] inp, double[] outp)
-    {
-        for (int i = 0; i < this.fftLength; i++)
-            this.din[i] = inp[i] * this.fftWindow[i];
-        this.DoFft(outp);
-    }
     public void Dispose()
     {
         fftwf.free(this.pin);
         fftwf.free(this.pout);
-        fftwf.destroy_plan(this.fplan);
+        fftwf.destroy_plan(this.fplanForward);
+        fftwf.destroy_plan(this.fplanBackward);
     }
 }
