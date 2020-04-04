@@ -5,7 +5,7 @@
       "app_key": "application.generated.unity.vrunityspectrum.exe",
       "launch_type": "url",
       "url": "steam://launch/",
-      "action_manifest_path": "C:\\Users\\bytecrunch\\Documents\\Uni\\Vertiefende Studienarbeit\\vrunityspectrum\\VrUnitySpectrum\\actions.json",
+      "action_manifest_path": "C:\\Users\\bytecrunch\\Documents\\Uni\\Bachelor Arbeit\\vraudiosandbox\\VrAudioSandbox\\actions.json",
       "strings": {
         "en_us": {
           "name": "VrUnitySpectrum [Testing]"

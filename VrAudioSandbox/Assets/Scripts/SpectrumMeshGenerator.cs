@@ -38,7 +38,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
         // Color meshes according to play position
         if (this.audioEngine.isPlaying)
         {
-            double msPerChunk = this.audioEngine.importDurationInMs / this.audioEngine.fftData.Length;
+            double msPerChunk = this.audioEngine.importDurationInMs / this.audioEngine.fftDatadBs.Length;
             int posIdx = (int)(this.audioEngine.GetPositionInMs() / msPerChunk);
 
             for (int i = 0; i < posIdx; i++)
@@ -175,7 +175,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
         for (int i = 0; i < this.countOfPeakVertices; i++) {
             Vector3 p;
             p.x = center.x + i * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
-            p.y = center.y + (float)this.audioEngine.fftData[meshIdx][i] * this.dataScale;
+            p.y = center.y + (float)(System.Math.Abs(this.audioEngine.fftDataMagnitudes[meshIdx][i])) * this.dataScale;
             p.z = center.z + meshIdx * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
 
             this.vertices[meshIdx][this.countOfRasterVertices+i] = p;

@@ -19,7 +19,10 @@ public class AudioEngine : MonoBehaviour
     public string filePath;
 
     [HideInInspector]
-    public float[][] fftData;
+    public double[][] fftData;
+    public double[][] fftDataMagnitudes;
+    public double[][] fftDatadBs;
+    public double[][] ifftData;
 
     private NAudio.Wave.WaveFileReader waveReader;
     private NAudio.Wave.WaveOut waveOut;
@@ -28,10 +31,14 @@ public class AudioEngine : MonoBehaviour
     private float[] audioData;
     private byte[] playbackBuffer;
 
+    private System.IO.MemoryStream memoryStream;
+
     public int importSampleRate;
     public int importBitDepth;
     public double importDurationInMs;
     public int importChannels;
+    public int fftSize;
+    public int fftNumOfChunks;
     public double[] fftFrequencies;
     public int fftBinCount;
 
@@ -112,7 +119,7 @@ public class AudioEngine : MonoBehaviour
         {
             if (sample.Length > 1) {
                 //TODO multi channel support - only take first channel for now
-                Debug.Log("<AudioEngine> multi-channel audio files are not supported right now - so only first channel is used, number of channels: " + this.importChannels.ToString());
+                Debug.Log("<AudioEngine> multi-channel audio files are not supported right now - so only first channel is used, number of channels in the input file: " + this.importChannels.ToString());
             }
             this.audioData[pos] = sample[0];
             pos++;
@@ -120,6 +127,9 @@ public class AudioEngine : MonoBehaviour
 
         this.DoFft();
         this.spectrum.Init();
+
+        // testing
+        this.DoIfft();
     }
 
     public void Play()
@@ -127,7 +137,23 @@ public class AudioEngine : MonoBehaviour
         Debug.Log("<AudioEngine> Play");
         if (this.waveOut == null)
         {
-            this.loopStream = new LoopStream(this.waveReader);
+
+            int blockAlign = (this.importChannels * (this.importBitDepth / 8));
+
+            NAudio.Wave.RawSourceWaveStream rws = new NAudio.Wave.RawSourceWaveStream(
+                this.playbackBuffer,
+                0,
+                this.playbackBuffer.Length,
+                NAudio.Wave.WaveFormat.CreateCustomFormat(
+                    NAudio.Wave.WaveFormatEncoding.Pcm,
+                    this.importSampleRate,
+                    this.importChannels,
+                    this.importSampleRate * this.importBitDepth * this.importChannels,
+                    blockAlign,
+                    this.importBitDepth
+                    )
+                );
+            this.loopStream = new LoopStream(rws);
             this.waveOut = new NAudio.Wave.WaveOut(); //TODO: find fix. Waveout will try to use Windows.Forms for error dialog boxes - this is not supported under Unity Mono (will display "could not register the window class, win 32 error 0")
             this.waveOut.PlaybackStopped += OnPlaybackStopped;
             this.waveOut.Init(this.loopStream);
@@ -170,7 +196,7 @@ public class AudioEngine : MonoBehaviour
         Debug.Log("<AudioEngine> Rewind");
         if (this.waveOut != null)
         {
-            this.waveReader.Position = 0;
+            this.memoryStream.Position = 0;
             this.spectrum.ResetMeshColors();
         }
     }
@@ -198,13 +224,15 @@ public class AudioEngine : MonoBehaviour
     {
         if (this.audioData != null && this.audioData.Length > 0)
         {
-            int fftSize = (int)(this.importSampleRate * 0.0232199546485261); // magic number taken from 44.100 Hz / 1024
+            this.fftSize = (int)(this.importSampleRate * 0.0232199546485261); // magic number taken from 44.100 Hz / 1024
             this.fftBinCount = fftSize / 2;
 
-            // Calculate size of chunk that will be sent to FFT routine
-            int numOfChunks = (this.audioData.Length + fftSize - 1) / fftSize; // integer round up
+            this.fft = new Fft();
 
-            Debug.Log("<AudioEngine> numOfSamples: " + this.audioData.Length.ToString() + " fftSize: " + fftSize.ToString() + " numOfChunks: " + numOfChunks.ToString() + " binResolution: " + (this.importSampleRate / 2 / fftSize).ToString() + "Hz");
+            // Calculate size of chunk that will be sent to FFT routine
+            this.fftNumOfChunks = (this.audioData.Length + this.fftSize - 1) / this.fftSize; // integer round up
+
+            Debug.Log("<AudioEngine> numOfSamples: " + this.audioData.Length.ToString() + " fftSize: " + this.fftSize.ToString() + " numOfChunks: " + this.fftNumOfChunks.ToString() + " binResolution: " + (this.importSampleRate / 2 / this.fftSize).ToString() + "Hz");
 
             // Create map of frequencies for the bins
             this.fftFrequencies = new double[this.fftBinCount];
@@ -212,28 +240,84 @@ public class AudioEngine : MonoBehaviour
                 this.fftFrequencies[i] = (double)i / this.fftBinCount * this.importSampleRate / 2;
 
             // Do FFT per chunk
-            float[][] input = new float[numOfChunks][];
-            float[][] result = new float[numOfChunks][];
-            this.fft = new Fft(fftSize);
-            for (int i = 0; i < numOfChunks; i++)
-            {
-                input[i] = new float[fftSize];
-                result[i] = new float[fftSize];
+            double[][] input = new double[this.fftNumOfChunks][];
+            double[][] result = new double[this.fftNumOfChunks][];
+            double[][] magnitudes = new double[this.fftNumOfChunks][];
+            double[][] dBs = new double[this.fftNumOfChunks][];
 
-                for (int j = 0; j < fftSize; j++)
+            for (int i = 0; i < this.fftNumOfChunks; i++)
+            {
+                input[i] = new double[this.fftSize];
+                result[i] = new double[this.fftSize];
+                magnitudes[i] = new double[this.fftSize];
+                dBs[i] = new double[this.fftSize];
+
+                for (int j = 0; j < this.fftSize; j++)
                 {
                     // last chunk might be smaller than fftSize
-                    if (this.audioData.Length > i * fftSize + j)
+                    if (this.audioData.Length > i * this.fftSize + j)
                     {
-                        input[i][j] = this.audioData[i * fftSize + j];
+                        input[i][j] = this.audioData[i * this.fftSize + j];
                     } else {
                         // fill with zeros
-                        input[i][j] = 0f;
+                        input[i][j] = 0;
                     }
                 }
-                fft.RunFft(input[i], result[i]);
+                fft.RunFft(input[i], result[i], true);
+
+                magnitudes[i] = Fft.Magnitudes(result[i]);
+                dBs[i] = Fft.dB(magnitudes[i]);
             }
             this.fftData = result;
+            this.fftDataMagnitudes = magnitudes;
+            this.fftDatadBs = dBs;
+        }
+    }
+
+    public void DoIfft()
+    {
+        if (this.fftData != null && this.fftData.Length > 0)
+        {
+            // Do IFFT per chunk
+            double[][] result = new double[this.fftNumOfChunks][];
+
+            for (int i = 0; i < this.fftNumOfChunks; i++)
+            {
+                result[i] = new double[this.fftSize];
+                fft.RunIfft(this.fftData[i], result[i]);
+            }
+            this.ifftData = result;
+            //this.audioCompare();
+            this.FillPlaybackBuffer();
+        }
+    }
+
+    private void FillPlaybackBuffer()
+    {
+        this.playbackBuffer = new byte[this.ifftData.Length * this.fftSize * 8];
+        int pos = 0;
+        for (int i = 0; i < this.ifftData.Length; i++)
+        {          
+            for (int j = 0; j < this.ifftData[i].Length; j++)
+            {
+                byte[] buffer = System.BitConverter.GetBytes(this.ifftData[i][j]);
+                System.Array.Copy(buffer, 0, this.playbackBuffer, pos, 8);
+                pos += 8;
+            }
+        }
+    }
+
+    private void audioCompare()
+    {
+        int pos = 0;
+        for (int i = 0; i < 100; i++)
+        {
+            for (int j = 0; j < this.ifftData[i].Length; j++)
+            {
+            Debug.Log(this.audioData[pos].ToString() + " / " + this.ifftData[i][j].ToString());
+            Debug.Log("= " + (this.audioData[pos] / this.ifftData[i][j]).ToString());
+            pos++;
+            }
         }
     }
 

@@ -9,61 +9,89 @@ using FFTWSharp;
 public class Fft
 {
     System.IntPtr pin, pout;
-    private float[] fin, fout;
 
     // pointers to FFTW plan objects
     System.IntPtr fplanForward, fplanBackward;
 
-    private int fftSize;
+    private int n;
 
-    public Fft(int n)
+    public void RunFft(double[] input, double[] output, bool real)
     {
-        this.fftSize = n;
+        /*if (real)
+            input = Fft.ToComplex(input);*/
 
-        this.pin = fftwf.malloc(n * 2 * sizeof(float));
-        this.pout = fftwf.malloc(n * 2 * sizeof(float));
+        this.n = input.Length;
 
-        // TODO check if fftw_flags.Measure makes a huge difference
-        this.fplanForward = fftwf.r2r_1d(n, this.pin, this.pout, fftw_kind.R2HC, fftw_flags.Estimate);
-        this.fplanBackward = fftwf.r2r_1d(n, this.pout, this.pin, fftw_kind.HC2R, fftw_flags.Estimate);
-    }
+        this.pin = fftw.malloc(this.n * 2 * sizeof(double));
+        this.pout = fftw.malloc(this.n * 2 * sizeof(double));
 
-    public void RunFft(float[] input, float[] output)
-    {
-        this.fin = input;
-        this.fout = output;
+        this.fplanForward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.R2HC, fftw_flags.Estimate);
 
-        Marshal.Copy(this.fin, 0, this.pin, this.fftSize);
+        Marshal.Copy(input, 0, this.pin, this.n);
         fftwf.execute(this.fplanForward);
-        Marshal.Copy(this.pout, this.fout, 0, this.fftSize);
+        Marshal.Copy(this.pout, output, 0, this.n);
+    }
 
-        
+    public void RunIfft(double[] input, double[] output)
+    {
+        this.fplanBackward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.HC2R, fftw_flags.Estimate);
+
+        Marshal.Copy(input, 0, this.pin, this.n);
+        fftwf.execute(this.fplanBackward);
+        Marshal.Copy(this.pout, output, 0, this.n);
+
+        // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
+        // In other words, applying the forward and then the backward transform will multiply the input by n. 
+        // Divide by n:
         for (int i = 0; i < output.Length; i++)
         {
-            output[i] = System.Math.Abs(output[i]);
+            output[i] /= this.n;
         }
     }
 
-    public void RunIfft(float[] input, float[] output)
+    /*private static double[] ToComplex(double[] real)
     {
-        // Transforms are unnormalized, so r2hc followed by hc2r will result in the original data multiplied by n.
-        // Furthermore, like the c2r transform, an out-of-place hc2r transform will destroy its input array. 
-        // (http://www.fftw.org/fftw3_doc/The-Halfcomplex_002dformat-DFT.html#The-Halfcomplex_002dformat-DFT)
+        int n = real.Length;
 
-        float[] inputCopy = new float[input.Length];
-        System.Array.Copy(input, inputCopy, input.Length);
-        this.fin = inputCopy;
-        this.fout = output;
-
-        Marshal.Copy(this.fin, 0, this.pin, this.fftSize);
-        fftwf.execute(this.fplanBackward);
-        Marshal.Copy(this.pout, this.fout, 0, this.fftSize);
-
-        // divide by n
-        for (int i = 0; i < output.Length; i++)
+        double[] comp = new double[n * 2];
+        for (int i = 0; i < n; i++)
         {
-            output[i] /= this.fftSize;
+            comp[2 * i] = real[i];
         }
+        return comp;
+    }
+
+    public static double[] ComplexMagnitudes(double[] x)
+    {
+        int n = x.Length / 2;
+        double[] y = new double[n];
+        for (int i = 0; i < n; i++)
+        {
+            y[i] = System.Math.Sqrt(x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]);
+        }
+        return y;
+    }*/
+
+    public static double[] Magnitudes(double[] x)
+    {
+        int n = x.Length;
+        double[] y = new double[n];
+        for (int i = 0; i < n; i++)
+        {
+            y[i] = System.Math.Abs(x[i]);
+        }
+        return y;
+    }
+
+    public static double[] dB(double[] x)
+    {
+        int n = x.Length;
+        double[] y = new double[n];
+        for (int i = 0; i < n; i++)
+        {
+            y[i] = (double)(20 * System.Math.Log(x[i]));
+        }
+        return y;
     }
 
     public void Dispose()

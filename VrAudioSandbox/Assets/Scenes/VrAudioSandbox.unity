@@ -769,6 +769,8 @@ MonoBehaviour:
   importBitDepth: 0
   importDurationInMs: 0
   importChannels: 0
+  fftSize: 0
+  fftNumOfChunks: 0
   fftFrequencies: []
   fftBinCount: 0
   isPlaying: 0
