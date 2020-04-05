@@ -31,8 +31,6 @@ public class AudioEngine : MonoBehaviour
     private float[] audioData;
     private byte[] playbackBuffer;
 
-    private System.IO.MemoryStream memoryStream;
-
     public int importSampleRate;
     public int importBitDepth;
     public double importDurationInMs;
@@ -148,7 +146,7 @@ public class AudioEngine : MonoBehaviour
                     NAudio.Wave.WaveFormatEncoding.Pcm,
                     this.importSampleRate,
                     this.importChannels,
-                    this.importSampleRate * this.importBitDepth * this.importChannels,
+                    this.importSampleRate * this.importBitDepth / 8 * this.importChannels,
                     blockAlign,
                     this.importBitDepth
                     )
@@ -181,7 +179,8 @@ public class AudioEngine : MonoBehaviour
     public double GetPositionInMs()
     {
         long bytePos = this.loopStream.Position;
-        double ms = bytePos * 1000.0 / this.importBitDepth / 1 * 8 / this.importSampleRate; //1 for mono, TODO multichannel
+        //double ms = bytePos * 1000.0 / this.importBitDepth / 1 * 8 / this.importSampleRate; //1 for mono, TODO multichannel
+        double ms = bytePos / 1000 / this.importBitDepth / 8 / this.importSampleRate;
 
         return ms;
     }
@@ -196,7 +195,7 @@ public class AudioEngine : MonoBehaviour
         Debug.Log("<AudioEngine> Rewind");
         if (this.waveOut != null)
         {
-            this.memoryStream.Position = 0;
+            this.loopStream.Position = 0;
             this.spectrum.ResetMeshColors();
         }
     }
@@ -263,10 +262,8 @@ public class AudioEngine : MonoBehaviour
                         input[i][j] = 0;
                     }
                 }
-                fft.RunFft(input[i], result[i], true);
-
-                magnitudes[i] = Fft.Magnitudes(result[i]);
-                dBs[i] = Fft.dB(magnitudes[i]);
+                this.fft.RunFft(input[i], result[i], true, Fft.window_type.hann);
+                magnitudes[i] = this.fft.MagnitudesReal(result[i]);
             }
             this.fftData = result;
             this.fftDataMagnitudes = magnitudes;

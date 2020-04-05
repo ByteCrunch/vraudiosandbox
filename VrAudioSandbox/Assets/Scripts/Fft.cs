@@ -15,41 +15,130 @@ public class Fft
 
     private int n;
 
-    public void RunFft(double[] input, double[] output, bool real)
+    private double[] window;
+    public enum window_type
+    {
+        flat,
+        hann,
+        hamming,
+        blackman
+    };
+    private window_type windowFunction;
+    public double amp_cf;
+    public double pwr_cf;
+
+
+    /// <summary>
+    /// Creates array of window function factors for the current FFT size
+    /// </summary>
+    // windowing code taken from: https://github.com/101010b/AudioTest/blob/master/fft.cs
+    private void MakeWindow()
+    {
+        double alpha, a0, a1, a2;
+
+        this.window = new double[this.n];
+
+        switch (this.windowFunction)
+        {
+            case window_type.hann:
+                for (int i = 0; i < this.n; i++)
+                    this.window[i] = 0.5 - 0.5 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.n - 1));
+                amp_cf = 6;
+                pwr_cf = 4.3;
+                break;
+
+            case window_type.hamming:
+                for (int i = 0; i < this.n; i++)
+                    this.window[i] = 0.54 - 0.46 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.n - 1));
+                amp_cf = 5.35;
+                pwr_cf = 4.0;
+                break;
+
+            case window_type.blackman:
+                alpha = 0.16;
+                a0 = (1.0 - alpha) / 2.0;
+                a1 = 0.5;
+                a2 = alpha / 2;
+                for (int i = 0; i < this.n; i++)
+                    this.window[i] =
+                            a0
+                        - a1 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.n - 1))
+                        + a2 * System.Math.Cos((double)i * 4 * System.Math.PI / (this.n - 1));
+                amp_cf = 7.54;
+                pwr_cf = 5.2;
+                break;
+
+            case window_type.flat:
+            default:
+                for (int i = 0; i < this.n; i++)
+                    this.window[i] = 1.0;
+                amp_cf = 0;
+                pwr_cf = 0;
+                break;
+
+        }
+
+    }
+
+
+    /// <summary>
+    /// Runs the FFT with double precision
+    /// </summary>
+    /// <param name="input">input array</param>
+    /// <param name="output">array to store unnormalized transform ouput of FFT</param>
+    /// <param name="real">set to true for converting double[] of real numbers to double[] of complex numbers with real and imagenary parts interleaved</param>
+    /// <param name="wt">enum window_type for window function to use</param>
+    public void RunFft(double[] input, double[] output, bool real, window_type wt)
     {
         /*if (real)
             input = Fft.ToComplex(input);*/
 
         this.n = input.Length;
 
+        // Apply window function
+        this.windowFunction = wt;
+        this.MakeWindow();
+        for (int i = 0; i < this.n; i++)
+        {
+            input[i] *= this.window[i];
+        }
+
         this.pin = fftw.malloc(this.n * 2 * sizeof(double));
         this.pout = fftw.malloc(this.n * 2 * sizeof(double));
 
-        this.fplanForward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.R2HC, fftw_flags.Estimate);
+        this.fplanForward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.R2HC, fftw_flags.Measure);
 
         Marshal.Copy(input, 0, this.pin, this.n);
         fftwf.execute(this.fplanForward);
         Marshal.Copy(this.pout, output, 0, this.n);
     }
 
+    /// <summary>
+    /// Runs the IFFT with double precision - RunFft() must be run before for initalization of fft size and window function
+    /// </summary>
+    /// <param name="input">unnormalized transform ouput of FFT</param>
+    /// <param name="output">array to store output of IFFT</param>
     public void RunIfft(double[] input, double[] output)
     {
-        this.fplanBackward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.HC2R, fftw_flags.Estimate);
+        this.fplanBackward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.HC2R, fftw_flags.Measure);
 
         Marshal.Copy(input, 0, this.pin, this.n);
         fftwf.execute(this.fplanBackward);
         Marshal.Copy(this.pout, output, 0, this.n);
 
-        // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
-        // In other words, applying the forward and then the backward transform will multiply the input by n. 
-        // Divide by n:
-        for (int i = 0; i < output.Length; i++)
+        // Revert windowing
+        for (int i = 0; i > this.n; i++)
         {
-            output[i] /= this.n;
+            output[i] /= window[i];
         }
     }
 
-    /*private static double[] ToComplex(double[] real)
+    /// <summary>
+    /// Converts a real number double[] to complex number double[] with zeros as imagenary part
+    /// </summary>
+    /// <param name="real">double[] input array of real numbers</param>
+    /// <returns>double[] double the size of input with interleaved zeros</returns>
+    private static double[] RealToComplex(double[] real)
     {
         int n = real.Length;
 
@@ -61,29 +150,55 @@ public class Fft
         return comp;
     }
 
-    public static double[] ComplexMagnitudes(double[] x)
+    /// <summary>
+    /// Calculates the absolute values for a double[] of complex numbers and normalize the transform.
+    /// </summary>
+    /// <param name="x">input double[] with real and imagenary parts interleaved</param>
+    /// <returns>double[] with absolute values and normalized transform</returns>
+    public double[] MagnitudesComplex(double[] x)
     {
+        //double cf = 2.0 / 32767.0; // what is the meaning of this constant factor?
+        double cf = 1.0;
+
         int n = x.Length / 2;
         double[] y = new double[n];
         for (int i = 0; i < n; i++)
         {
-            y[i] = System.Math.Sqrt(x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]);
-        }
-        return y;
-    }*/
-
-    public static double[] Magnitudes(double[] x)
-    {
-        int n = x.Length;
-        double[] y = new double[n];
-        for (int i = 0; i < n; i++)
-        {
-            y[i] = System.Math.Abs(x[i]);
+            // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
+            // In other words, applying the forward and then the backward transform will multiply the input by n. 
+            y[i] = cf * System.Math.Sqrt((x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]) / (this.n * this.n));
         }
         return y;
     }
 
-    public static double[] dB(double[] x)
+    /// <summary>
+    /// Calculates the absolute values for a double[] of real numbers and normalize the transform.
+    /// </summary>
+    /// <param name="x">input double[] with real numbers</param>
+    /// <returns>double[] with absolute values and normalized transform</returns>
+    public double[] MagnitudesReal(double[] x)
+    {
+
+        //double cf = 2.0 / 32767.0; // what is the meaning of this constant factor?
+        double cf = 1.0;
+
+        int n = x.Length;
+        double[] y = new double[n];
+        for (int i = 0; i < n; i++)
+        {
+            // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
+            // In other words, applying the forward and then the backward transform will multiply the input by n. 
+            y[i] = cf * System.Math.Abs(x[i]) / this.n;
+        }
+        return y;
+    }
+
+    /// <summary>
+    /// Calculates dB for given magnitude values
+    /// </summary>
+    /// <param name="x"></param>
+    /// <returns></returns>
+    public double[] dB(double[] x)
     {
         int n = x.Length;
         double[] y = new double[n];
@@ -94,6 +209,9 @@ public class Fft
         return y;
     }
 
+    /// <summary>
+    /// Deallocates resources
+    /// </summary>
     public void Dispose()
     {
         fftwf.free(this.pin);
