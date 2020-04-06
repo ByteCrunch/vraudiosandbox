@@ -257,7 +257,7 @@ public class AudioEngine : MonoBehaviour
                         input[i][j] = 0;
                     }
                 }
-                this.fft.RunFft(input[i], result[i], true, Fft.WindowType.hann);
+                result[i] = this.fft.RunFft(input[i], true, Fft.WindowType.hann);
                 //magnitudes[i] = this.fft.MagnitudesReal(result[i]);
                 magnitudes[i] = this.fft.MagnitudesComplex(result[i]);
             }
@@ -276,8 +276,7 @@ public class AudioEngine : MonoBehaviour
 
             for (int i = 0; i < this.fftData.Length; i++)
             {
-                result[i] = new double[this.fftSize * 2]; // result from ifft comes in interleaved format - real and imagenary part
-                fft.RunIfft(this.fftData[i], result[i]);
+                result[i] = fft.RunIfft(this.fftData[i]);
             }
             this.ifftData = result;
             //this.CheckIfftResults();

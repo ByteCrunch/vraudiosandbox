@@ -8,7 +8,7 @@ using FFTWSharp;
 
 public class Fft
 {
-    System.IntPtr pin, pout;
+    System.IntPtr ptr;
 
     // pointers to FFTW plan objects
     System.IntPtr fplanForward, fplanBackward;
@@ -88,7 +88,7 @@ public class Fft
     /// <param name="output">array to store unnormalized transform ouput of FFT</param>
     /// <param name="real">set to true for converting double[] of real numbers to double[] of complex numbers with real and imagenary parts interleaved</param>
     /// <param name="wt">enum window_type for window function to use</param>
-    public void RunFft(double[] input, double[] output, bool real, WindowType wt)
+    public double[] RunFft(double[] input, bool real, WindowType wt)
     {
         if (real)
             input = Fft.RealToComplex(input);
@@ -103,16 +103,18 @@ public class Fft
             input[i] *= this.window[i];
         }
 
-        this.pin = fftw.malloc(this.n * sizeof(double));
-        this.pout = fftw.malloc(this.n * sizeof(double));
+        this.ptr = fftw.malloc(this.n * sizeof(double));
 
         //this.fplanForward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.R2HC, fftw_flags.Measure);
         // (n / 2 because complex numbers are stored as pairs of doubles)
-        this.fplanForward = fftw.dft_1d(this.n / 2, this.pin, this.pout, fftw_direction.Forward, fftw_flags.Measure);
+        this.fplanForward = fftw.dft_1d(this.n / 2, this.ptr, this.ptr, fftw_direction.Forward, fftw_flags.Measure);
 
-        Marshal.Copy(input, 0, this.pin, this.n);
+        Marshal.Copy(input, 0, this.ptr, this.n);
         fftw.execute(this.fplanForward);
-        Marshal.Copy(this.pout, output, 0, this.n);
+        double[] output = new double[this.n];
+        Marshal.Copy(this.ptr, output, 0, this.n);
+
+        return output;
     }
 
     /// <summary>
@@ -120,16 +122,17 @@ public class Fft
     /// </summary>
     /// <param name="input">unnormalized transform ouput of FFT</param>
     /// <param name="output">array to store output of IFFT</param>
-    public void RunIfft(double[] input, double[] output)
+    public double[] RunIfft(double[] input)
     {
 
         //this.fplanBackward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.HC2R, fftw_flags.Measure);
         // (n / 2 because complex numbers are stored as pairs of doubles)
-        this.fplanBackward = fftw.dft_1d(this.n / 2, this.pin, this.pout, fftw_direction.Backward, fftw_flags.Measure);
+        this.fplanBackward = fftw.dft_1d(this.n / 2, this.ptr, this.ptr, fftw_direction.Backward, fftw_flags.Measure);
 
-        Marshal.Copy(input, 0, this.pin, this.n);
+        Marshal.Copy(input, 0, this.ptr, this.n);
         fftw.execute(this.fplanBackward);
-        Marshal.Copy(this.pout, output, 0, this.n);
+        double[] output = new double[this.n]; 
+        Marshal.Copy(this.ptr, output, 0, this.n);
 
         // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
         // In other words, applying the forward and then the backward transform will multiply the input by n. 
@@ -139,6 +142,8 @@ public class Fft
         {
             output[i] = output[i] / this.window[i] / (this.n / 2);
         }
+
+        return output;
     }
 
     /// <summary>
@@ -218,8 +223,7 @@ public class Fft
     /// </summary>
     public void Dispose()
     {
-        fftwf.free(this.pin);
-        fftwf.free(this.pout);
+        fftwf.free(this.ptr);
         fftwf.destroy_plan(this.fplanForward);
         fftwf.destroy_plan(this.fplanBackward);
     }
