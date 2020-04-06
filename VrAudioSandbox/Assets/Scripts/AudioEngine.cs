@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NAudio;
 using SimpleFileBrowser;
 using UnityEngine;
@@ -22,14 +23,17 @@ public class AudioEngine : MonoBehaviour
     public double[][] fftData;
     public double[][] fftDataMagnitudes;
     public double[][] fftDatadBs;
+
     public double[][] ifftData;
 
     private NAudio.Wave.WaveFileReader waveReader;
-    private NAudio.Wave.WaveOut waveOut;
+    private NAudio.Wave.WaveOutEvent waveOut;
+    private NAudio.Wave.IWaveProvider waveProvider;
     private LoopStream loopStream;
 
     private float[] audioData;
     private byte[] playbackBuffer;
+    private System.IO.Stream memoryStream;
 
     public int importSampleRate;
     public int importBitDepth;
@@ -104,7 +108,8 @@ public class AudioEngine : MonoBehaviour
 
         this.importSampleRate = this.waveReader.WaveFormat.SampleRate;
         this.importBitDepth = this.waveReader.WaveFormat.BitsPerSample;
-        this.importChannels = this.waveReader.WaveFormat.Channels;
+        this.importChannels = this.waveReader.WaveFormat.Channels; //TODO multi channel support
+        this.importChannels = 1; //override, because only mono supported for now
         this.importDurationInMs = this.waveReader.TotalTime.TotalMilliseconds;
 
         long numOfSamples = this.waveReader.SampleCount * this.importChannels;
@@ -125,8 +130,6 @@ public class AudioEngine : MonoBehaviour
 
         this.DoFft();
         this.spectrum.Init();
-
-        // testing
         this.DoIfft();
     }
 
@@ -135,26 +138,13 @@ public class AudioEngine : MonoBehaviour
         Debug.Log("<AudioEngine> Play");
         if (this.waveOut == null)
         {
-
-            int blockAlign = (this.importChannels * (this.importBitDepth / 8));
-
-            NAudio.Wave.RawSourceWaveStream rws = new NAudio.Wave.RawSourceWaveStream(
-                this.playbackBuffer,
-                0,
-                this.playbackBuffer.Length,
-                NAudio.Wave.WaveFormat.CreateCustomFormat(
-                    NAudio.Wave.WaveFormatEncoding.Pcm,
-                    this.importSampleRate,
-                    this.importChannels,
-                    this.importSampleRate * this.importBitDepth / 8 * this.importChannels,
-                    blockAlign,
-                    this.importBitDepth
-                    )
+            this.waveProvider = new NAudio.Wave.RawSourceWaveStream(
+                this.memoryStream,
+                NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(this.importSampleRate, this.importChannels)
                 );
-            this.loopStream = new LoopStream(rws);
-            this.waveOut = new NAudio.Wave.WaveOut(); //TODO: find fix. Waveout will try to use Windows.Forms for error dialog boxes - this is not supported under Unity Mono (will display "could not register the window class, win 32 error 0")
+            this.waveOut = new NAudio.Wave.WaveOutEvent();
             this.waveOut.PlaybackStopped += OnPlaybackStopped;
-            this.waveOut.Init(this.loopStream);
+            this.waveOut.Init(this.waveProvider);
             this.waveOut.Play();
         } else {
             this.waveOut.Play();
@@ -178,9 +168,9 @@ public class AudioEngine : MonoBehaviour
 
     public double GetPositionInMs()
     {
-        long bytePos = this.loopStream.Position;
-        //double ms = bytePos * 1000.0 / this.importBitDepth / 1 * 8 / this.importSampleRate; //1 for mono, TODO multichannel
-        double ms = bytePos / 1000 / this.importBitDepth / 8 / this.importSampleRate;
+        //long bytePos = this.loopStream.Position;
+        long bytePos = this.memoryStream.Position;
+        double ms = bytePos / this.importSampleRate / 4 * 1000.0;
 
         return ms;
     }
@@ -195,7 +185,8 @@ public class AudioEngine : MonoBehaviour
         Debug.Log("<AudioEngine> Rewind");
         if (this.waveOut != null)
         {
-            this.loopStream.Position = 0;
+            //this.loopStream.Position = 0;
+            this.memoryStream.Position = 0;
             this.spectrum.ResetMeshColors();
         }
     }
@@ -231,7 +222,11 @@ public class AudioEngine : MonoBehaviour
             // Calculate size of chunk that will be sent to FFT routine
             this.fftNumOfChunks = (this.audioData.Length + this.fftSize - 1) / this.fftSize; // integer round up
 
-            Debug.Log("<AudioEngine> numOfSamples: " + this.audioData.Length.ToString() + " fftSize: " + this.fftSize.ToString() + " numOfChunks: " + this.fftNumOfChunks.ToString() + " binResolution: " + (this.importSampleRate / 2 / this.fftSize).ToString() + "Hz");
+            Debug.Log("<AudioEngine> numOfSamples: " + this.audioData.Length.ToString() +
+                " fftSize: " + this.fftSize.ToString() +
+                " numOfChunks: " + this.fftNumOfChunks.ToString() +
+                " binResolution: " + (this.importSampleRate / 2 / this.fftSize).ToString() + "Hz"
+                );
 
             // Create map of frequencies for the bins
             this.fftFrequencies = new double[this.fftBinCount];
@@ -247,7 +242,7 @@ public class AudioEngine : MonoBehaviour
             for (int i = 0; i < this.fftNumOfChunks; i++)
             {
                 input[i] = new double[this.fftSize];
-                result[i] = new double[this.fftSize];
+                result[i] = new double[this.fftSize * 2];
                 magnitudes[i] = new double[this.fftSize];
                 dBs[i] = new double[this.fftSize];
 
@@ -262,8 +257,9 @@ public class AudioEngine : MonoBehaviour
                         input[i][j] = 0;
                     }
                 }
-                this.fft.RunFft(input[i], result[i], true, Fft.window_type.hann);
-                magnitudes[i] = this.fft.MagnitudesReal(result[i]);
+                this.fft.RunFft(input[i], result[i], true, Fft.WindowType.hann);
+                //magnitudes[i] = this.fft.MagnitudesReal(result[i]);
+                magnitudes[i] = this.fft.MagnitudesComplex(result[i]);
             }
             this.fftData = result;
             this.fftDataMagnitudes = magnitudes;
@@ -276,46 +272,83 @@ public class AudioEngine : MonoBehaviour
         if (this.fftData != null && this.fftData.Length > 0)
         {
             // Do IFFT per chunk
-            double[][] result = new double[this.fftNumOfChunks][];
+            double[][] result = new double[this.fftData.Length][];
 
-            for (int i = 0; i < this.fftNumOfChunks; i++)
+            for (int i = 0; i < this.fftData.Length; i++)
             {
-                result[i] = new double[this.fftSize];
+                result[i] = new double[this.fftSize * 2]; // result from ifft comes in interleaved format - real and imagenary part
                 fft.RunIfft(this.fftData[i], result[i]);
             }
             this.ifftData = result;
-            //this.audioCompare();
+            //this.CheckIfftResults();
             this.FillPlaybackBuffer();
+
         }
     }
 
+    private void CheckIfftResults()
+    {
+        string[] lines = new string[this.audioData.Length];
+        for (int i = 0; i < this.ifftData.Length; i++)
+        {
+            for (int j = 0; j < this.ifftData[i].Length; j++)
+            {
+
+                if (i * this.fftSize + j >= this.audioData.Length)
+                    break;
+                lines[i * this.fftSize + j] = (this.audioData[i * this.fftSize + j]).ToString() + "\t" + (this.ifftData[i][j]).ToString() + "\t" + (this.audioData[i * this.fftSize + j] / this.ifftData[i][j]).ToString();
+            }
+        }
+        System.IO.File.WriteAllLines(@"C:\Users\bytecrunch\Desktop\ifft-check.txt", lines);
+    }
     private void FillPlaybackBuffer()
     {
         this.playbackBuffer = new byte[this.ifftData.Length * this.fftSize * 8];
         int pos = 0;
         for (int i = 0; i < this.ifftData.Length; i++)
-        {          
-            for (int j = 0; j < this.ifftData[i].Length; j++)
+        {
+            /*// result of ifft is in interleaved complex format - take only uneven indexes
+            double[] doubleValues = this.ifftData[i].Where((value, index) => index % 2 == 1).ToArray();
+
+            // double to float conversion
+            float[] values;
+            values = System.Array.ConvertAll<double, float>(this.ifftData[i], y => (float)y);*/
+
+            float[] values = new float[this.ifftData[i].Length / 2];
+            // result of ifft is in interleaved complex format - take only real part, therefore j+=2
+            for (int j = 0; j < this.ifftData[i].Length; j += 2)
             {
-                byte[] buffer = System.BitConverter.GetBytes(this.ifftData[i][j]);
-                System.Array.Copy(buffer, 0, this.playbackBuffer, pos, 8);
-                pos += 8;
+                values[j/2] = (float)this.ifftData[i][j];
             }
+
+            // float to bytes conversion
+            byte[] frames;
+            frames = values.SelectMany(value => System.BitConverter.GetBytes(value)).ToArray();
+            System.Array.Copy(frames, 0, this.playbackBuffer, pos, frames.Length);
+            pos += frames.Length;
         }
+        this.memoryStream = new System.IO.MemoryStream(this.playbackBuffer);
+        this.memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
     }
 
-    private void audioCompare()
+    public static byte[] GetSamplesWaveData(float[] samples)
     {
-        int pos = 0;
-        for (int i = 0; i < 100; i++)
+        int samplesCount = samples.Length;
+        var pcm = new byte[samplesCount * 2];
+        int sampleIndex = 0,
+            pcmIndex = 0;
+
+        while (sampleIndex < samplesCount)
         {
-            for (int j = 0; j < this.ifftData[i].Length; j++)
-            {
-            Debug.Log(this.audioData[pos].ToString() + " / " + this.ifftData[i][j].ToString());
-            Debug.Log("= " + (this.audioData[pos] / this.ifftData[i][j]).ToString());
-            pos++;
-            }
+            var outsample = (short)(samples[sampleIndex] * short.MaxValue);
+            pcm[pcmIndex] = (byte)(outsample & 0xff);
+            pcm[pcmIndex + 1] = (byte)((outsample >> 8) & 0xff);
+
+            sampleIndex++;
+            pcmIndex += 2;
         }
+
+        return pcm;
     }
 
     private void Update()

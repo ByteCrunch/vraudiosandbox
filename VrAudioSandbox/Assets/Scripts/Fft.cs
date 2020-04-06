@@ -16,14 +16,14 @@ public class Fft
     private int n;
 
     private double[] window;
-    public enum window_type
+    public enum WindowType
     {
         flat,
         hann,
         hamming,
         blackman
     };
-    private window_type windowFunction;
+    private WindowType windowFunction;
     public double amp_cf;
     public double pwr_cf;
 
@@ -40,21 +40,21 @@ public class Fft
 
         switch (this.windowFunction)
         {
-            case window_type.hann:
+            case WindowType.hann:
                 for (int i = 0; i < this.n; i++)
                     this.window[i] = 0.5 - 0.5 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.n - 1));
                 amp_cf = 6;
                 pwr_cf = 4.3;
                 break;
 
-            case window_type.hamming:
+            case WindowType.hamming:
                 for (int i = 0; i < this.n; i++)
                     this.window[i] = 0.54 - 0.46 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.n - 1));
                 amp_cf = 5.35;
                 pwr_cf = 4.0;
                 break;
 
-            case window_type.blackman:
+            case WindowType.blackman:
                 alpha = 0.16;
                 a0 = (1.0 - alpha) / 2.0;
                 a1 = 0.5;
@@ -68,7 +68,7 @@ public class Fft
                 pwr_cf = 5.2;
                 break;
 
-            case window_type.flat:
+            case WindowType.flat:
             default:
                 for (int i = 0; i < this.n; i++)
                     this.window[i] = 1.0;
@@ -88,10 +88,10 @@ public class Fft
     /// <param name="output">array to store unnormalized transform ouput of FFT</param>
     /// <param name="real">set to true for converting double[] of real numbers to double[] of complex numbers with real and imagenary parts interleaved</param>
     /// <param name="wt">enum window_type for window function to use</param>
-    public void RunFft(double[] input, double[] output, bool real, window_type wt)
+    public void RunFft(double[] input, double[] output, bool real, WindowType wt)
     {
-        /*if (real)
-            input = Fft.ToComplex(input);*/
+        if (real)
+            input = Fft.RealToComplex(input);
 
         this.n = input.Length;
 
@@ -103,13 +103,15 @@ public class Fft
             input[i] *= this.window[i];
         }
 
-        this.pin = fftw.malloc(this.n * 2 * sizeof(double));
-        this.pout = fftw.malloc(this.n * 2 * sizeof(double));
+        this.pin = fftw.malloc(this.n * sizeof(double));
+        this.pout = fftw.malloc(this.n * sizeof(double));
 
-        this.fplanForward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.R2HC, fftw_flags.Measure);
+        //this.fplanForward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.R2HC, fftw_flags.Measure);
+        // (n / 2 because complex numbers are stored as pairs of doubles)
+        this.fplanForward = fftw.dft_1d(this.n / 2, this.pin, this.pout, fftw_direction.Forward, fftw_flags.Measure);
 
         Marshal.Copy(input, 0, this.pin, this.n);
-        fftwf.execute(this.fplanForward);
+        fftw.execute(this.fplanForward);
         Marshal.Copy(this.pout, output, 0, this.n);
     }
 
@@ -120,16 +122,22 @@ public class Fft
     /// <param name="output">array to store output of IFFT</param>
     public void RunIfft(double[] input, double[] output)
     {
-        this.fplanBackward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.HC2R, fftw_flags.Measure);
+
+        //this.fplanBackward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.HC2R, fftw_flags.Measure);
+        // (n / 2 because complex numbers are stored as pairs of doubles)
+        this.fplanBackward = fftw.dft_1d(this.n / 2, this.pin, this.pout, fftw_direction.Backward, fftw_flags.Measure);
 
         Marshal.Copy(input, 0, this.pin, this.n);
-        fftwf.execute(this.fplanBackward);
+        fftw.execute(this.fplanBackward);
         Marshal.Copy(this.pout, output, 0, this.n);
 
-        // Revert windowing
+        // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
+        // In other words, applying the forward and then the backward transform will multiply the input by n. 
+        
+        // Revert windowing and divide by n/2
         for (int i = 0; i > this.n; i++)
         {
-            output[i] /= window[i];
+            output[i] = output[i] / this.window[i] / (this.n / 2);
         }
     }
 
@@ -164,8 +172,6 @@ public class Fft
         double[] y = new double[n];
         for (int i = 0; i < n; i++)
         {
-            // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
-            // In other words, applying the forward and then the backward transform will multiply the input by n. 
             y[i] = cf * System.Math.Sqrt((x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]) / (this.n * this.n));
         }
         return y;
@@ -186,8 +192,6 @@ public class Fft
         double[] y = new double[n];
         for (int i = 0; i < n; i++)
         {
-            // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
-            // In other words, applying the forward and then the backward transform will multiply the input by n. 
             y[i] = cf * System.Math.Abs(x[i]) / this.n;
         }
         return y;
