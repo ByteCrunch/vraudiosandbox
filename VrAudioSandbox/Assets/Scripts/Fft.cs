@@ -114,6 +114,9 @@ public class Fft
         double[] output = new double[this.n];
         Marshal.Copy(this.ptr, output, 0, this.n);
 
+        fftw.free(this.ptr);
+        fftw.destroy_plan(this.fplanForward);
+
         return output;
     }
 
@@ -124,14 +127,14 @@ public class Fft
     /// <param name="output">array to store output of IFFT</param>
     public double[] RunIfft(double[] input)
     {
+        this.ptr = fftw.malloc(this.n * sizeof(double));
 
-        //this.fplanBackward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.HC2R, fftw_flags.Measure);
         // (n / 2 because complex numbers are stored as pairs of doubles)
         this.fplanBackward = fftw.dft_1d(this.n / 2, this.ptr, this.ptr, fftw_direction.Backward, fftw_flags.Measure);
 
         Marshal.Copy(input, 0, this.ptr, this.n);
         fftw.execute(this.fplanBackward);
-        double[] output = new double[this.n]; 
+        double[] output = new double[this.n];
         Marshal.Copy(this.ptr, output, 0, this.n);
 
         // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
@@ -140,8 +143,11 @@ public class Fft
         // Revert windowing and divide by n/2
         for (int i = 0; i > this.n; i++)
         {
-            output[i] = output[i] / this.window[i] / (this.n / 2);
+            output[i] = output[i] / this.window[i] / this.n / 2;
         }
+
+        fftw.free(this.ptr);
+        fftw.destroy_plan(this.fplanBackward);
 
         return output;
     }
@@ -168,7 +174,7 @@ public class Fft
     /// </summary>
     /// <param name="x">input double[] with real and imagenary parts interleaved</param>
     /// <returns>double[] with absolute values and normalized transform</returns>
-    public double[] MagnitudesComplex(double[] x)
+    public static double[] MagnitudesComplex(double[] x)
     {
         //double cf = 2.0 / 32767.0; // what is the meaning of this constant factor?
         double cf = 1.0;
@@ -177,7 +183,7 @@ public class Fft
         double[] y = new double[n];
         for (int i = 0; i < n; i++)
         {
-            y[i] = cf * System.Math.Sqrt((x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]) / (this.n * this.n));
+            y[i] = cf * System.Math.Sqrt((x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]) / (n * n));
         }
         return y;
     }
@@ -187,7 +193,7 @@ public class Fft
     /// </summary>
     /// <param name="x">input double[] with real numbers</param>
     /// <returns>double[] with absolute values and normalized transform</returns>
-    public double[] MagnitudesReal(double[] x)
+    public static double[] MagnitudesReal(double[] x)
     {
 
         //double cf = 2.0 / 32767.0; // what is the meaning of this constant factor?
@@ -197,11 +203,12 @@ public class Fft
         double[] y = new double[n];
         for (int i = 0; i < n; i++)
         {
-            y[i] = cf * System.Math.Abs(x[i]) / this.n;
+            y[i] = cf * System.Math.Abs(x[i]) / n;
         }
         return y;
     }
 
+    /*
     /// <summary>
     /// Calculates dB for given magnitude values
     /// </summary>
@@ -216,15 +223,5 @@ public class Fft
             y[i] = (double)(20 * System.Math.Log(x[i]));
         }
         return y;
-    }
-
-    /// <summary>
-    /// Deallocates resources
-    /// </summary>
-    public void Dispose()
-    {
-        fftwf.free(this.ptr);
-        fftwf.destroy_plan(this.fplanForward);
-        fftwf.destroy_plan(this.fplanBackward);
-    }
+    }*/
 }

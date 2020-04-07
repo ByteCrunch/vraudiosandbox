@@ -104,7 +104,6 @@ public class AudioEngine : MonoBehaviour
     {
         // Read in wav file and convert into a float[] of samples
         this.waveReader = new NAudio.Wave.WaveFileReader(this.filePath);
-        int numOfBytes = (int)this.waveReader.Length;
 
         this.importSampleRate = this.waveReader.WaveFormat.SampleRate;
         this.importBitDepth = this.waveReader.WaveFormat.BitsPerSample;
@@ -259,7 +258,7 @@ public class AudioEngine : MonoBehaviour
                 }
                 result[i] = this.fft.RunFft(input[i], true, Fft.WindowType.hann);
                 //magnitudes[i] = this.fft.MagnitudesReal(result[i]);
-                magnitudes[i] = this.fft.MagnitudesComplex(result[i]);
+                magnitudes[i] = Fft.MagnitudesComplex(result[i]);
             }
             this.fftData = result;
             this.fftDataMagnitudes = magnitudes;
@@ -277,6 +276,7 @@ public class AudioEngine : MonoBehaviour
             for (int i = 0; i < this.fftData.Length; i++)
             {
                 result[i] = fft.RunIfft(this.fftData[i]);
+                result[i] = Fft.MagnitudesComplex(result[i]);
             }
             this.ifftData = result;
             //this.CheckIfftResults();
@@ -306,19 +306,12 @@ public class AudioEngine : MonoBehaviour
         int pos = 0;
         for (int i = 0; i < this.ifftData.Length; i++)
         {
-            /*// result of ifft is in interleaved complex format - take only uneven indexes
-            double[] doubleValues = this.ifftData[i].Where((value, index) => index % 2 == 1).ToArray();
+            // result of ifft is in interleaved complex format - take only uneven indexes
+            double[] doubleValues = this.ifftData[i].Where((value, index) => index % 2 == 0).ToArray();
 
             // double to float conversion
             float[] values;
-            values = System.Array.ConvertAll<double, float>(this.ifftData[i], y => (float)y);*/
-
-            float[] values = new float[this.ifftData[i].Length / 2];
-            // result of ifft is in interleaved complex format - take only real part, therefore j+=2
-            for (int j = 0; j < this.ifftData[i].Length; j += 2)
-            {
-                values[j/2] = (float)this.ifftData[i][j];
-            }
+            values = System.Array.ConvertAll<double, float>(doubleValues, y => (float)y);
 
             // float to bytes conversion
             byte[] frames;
@@ -371,7 +364,6 @@ public class AudioEngine : MonoBehaviour
     void OnApplicationQuit()
     {
         Debug.Log("Exit");
-        this.fft.Dispose();
         this.StopAudioEngine();
     }
 }
