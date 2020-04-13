@@ -139,9 +139,11 @@ public class Fft
 
         // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
         // In other words, applying the forward and then the backward transform will multiply the input by n. 
-        
+
         // Revert windowing and divide by n/2
-        for (int i = 0; i > this.n; i++)
+
+        // TODO windowing cannot be reversed this way, see: https://dsp.stackexchange.com/questions/18522/fft-window-corrupts-signal
+        for (int i = 0; i < this.n; i++)
         {
             output[i] = output[i] / this.window[i] / this.n / 2;
         }
@@ -204,6 +206,22 @@ public class Fft
         for (int i = 0; i < n; i++)
         {
             y[i] = cf * System.Math.Abs(x[i]) / n;
+        }
+        return y;
+    }
+
+    /// <summary>
+    /// Calculates power in dB
+    /// </summary>
+    /// <param name="x"></param>
+    /// <returns></returns>
+    public static double[] PowerInDb(double[] x)
+    {
+        int n = x.Length / 2;
+        double[] y = new double[n];
+        for (int i = 0; i < n; i++)
+        {
+            y[i] = 10 * System.Math.Log(x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]) / System.Math.Log(10);
         }
         return y;
     }

@@ -256,7 +256,8 @@ public class AudioEngine : MonoBehaviour
                         input[i][j] = 0;
                     }
                 }
-                result[i] = this.fft.RunFft(input[i], true, Fft.WindowType.hann);
+                //result[i] = this.fft.RunFft(input[i], true, Fft.WindowType.hann);
+                result[i] = this.fft.RunFft(input[i], true, Fft.WindowType.flat);
                 //magnitudes[i] = this.fft.MagnitudesReal(result[i]);
                 magnitudes[i] = Fft.MagnitudesComplex(result[i]);
             }
@@ -276,10 +277,10 @@ public class AudioEngine : MonoBehaviour
             for (int i = 0; i < this.fftData.Length; i++)
             {
                 result[i] = fft.RunIfft(this.fftData[i]);
-                result[i] = Fft.MagnitudesComplex(result[i]);
+                //result[i] = Fft.MagnitudesComplex(result[i]);
             }
             this.ifftData = result;
-            //this.CheckIfftResults();
+            this.CheckIfftResults();
             this.FillPlaybackBuffer();
 
         }
@@ -295,10 +296,15 @@ public class AudioEngine : MonoBehaviour
 
                 if (i * this.fftSize + j >= this.audioData.Length)
                     break;
-                lines[i * this.fftSize + j] = (this.audioData[i * this.fftSize + j]).ToString() + "\t" + (this.ifftData[i][j]).ToString() + "\t" + (this.audioData[i * this.fftSize + j] / this.ifftData[i][j]).ToString();
+                lines[i * this.fftSize + j] =
+                    (this.audioData[i * this.fftSize + j]).ToString() + "\t\t\t" +
+                    (this.ifftData[i][j]).ToString() + "\t\t\t" +
+                    (this.audioData[i * this.fftSize + j] / this.ifftData[i][j]).ToString() + "\t\t\t" +
+                    (this.audioData[i * this.fftSize + j] - this.ifftData[i][j]).ToString();
             }
         }
-        System.IO.File.WriteAllLines(@"C:\Users\bytecrunch\Desktop\ifft-check.txt", lines);
+        string path = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop);
+        System.IO.File.WriteAllLines(path + "\\ifft-check.txt", lines);
     }
     private void FillPlaybackBuffer()
     {
@@ -306,7 +312,7 @@ public class AudioEngine : MonoBehaviour
         int pos = 0;
         for (int i = 0; i < this.ifftData.Length; i++)
         {
-            // result of ifft is in interleaved complex format - take only uneven indexes
+            // result of ifft is in interleaved complex format - take only even indexes
             double[] doubleValues = this.ifftData[i].Where((value, index) => index % 2 == 0).ToArray();
 
             // double to float conversion
