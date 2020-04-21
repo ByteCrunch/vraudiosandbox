@@ -38,7 +38,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
         // Color meshes according to play position
         if (this.audioEngine.isPlaying)
         {
-            double msPerChunk = this.audioEngine.importDurationInMs / this.audioEngine.fftDatadBs.Length;
+            double msPerChunk = this.audioEngine.importDurationInMs / this.audioEngine.ifftData.Length / 2;
             int posIdx = (int)(this.audioEngine.GetPositionInMs() / msPerChunk);
 
             for (int i = 0; i < posIdx; i++)
@@ -124,7 +124,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
 
     /*
     // Visualize vertices for Scene view debugging
-    // (huge performance killer for lots of vertices, will freeze unity if used for the whole fft data)
+    // (huge performance killer for lots of vertices, will freeze unity if used for the whole fft data set)
     private void OnDrawGizmos()
     {
         if (this.audioEngine == null)

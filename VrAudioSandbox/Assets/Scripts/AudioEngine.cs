@@ -13,7 +13,8 @@ public class AudioEngine : MonoBehaviour
         sinesweep1HzTo48000Hz,
         sine4000Hz,
         sine100Hz,
-        test
+        test,
+        drumloop
     }
     public testFiles selectAudioTestFile;
 
@@ -39,8 +40,11 @@ public class AudioEngine : MonoBehaviour
     public int importBitDepth;
     public double importDurationInMs;
     public int importChannels;
+    public int audioNumOfChunks;
     public int fftSize;
     public int fftNumOfChunks;
+    public float fftOverlapPercent;
+    public int fftOverlapOffset;
     public double[] fftFrequencies;
     public int fftBinCount;
 
@@ -81,6 +85,10 @@ public class AudioEngine : MonoBehaviour
                 case testFiles.test:
                     this.filePath = Application.dataPath + "/Resources/Audio/" + "test.wav";
                     break;
+
+                case testFiles.drumloop:
+                    this.filePath = Application.dataPath + "/Resources/Audio/" + "drumloop.wav";
+                    break;
             }
             this.LoadAudioData();
         }
@@ -108,7 +116,6 @@ public class AudioEngine : MonoBehaviour
         this.importSampleRate = this.waveReader.WaveFormat.SampleRate;
         this.importBitDepth = this.waveReader.WaveFormat.BitsPerSample;
         this.importChannels = this.waveReader.WaveFormat.Channels; //TODO multi channel support
-        this.importChannels = 1; //override, because only mono supported for now
         this.importDurationInMs = this.waveReader.TotalTime.TotalMilliseconds;
 
         long numOfSamples = this.waveReader.SampleCount * this.importChannels;
@@ -122,6 +129,7 @@ public class AudioEngine : MonoBehaviour
             if (sample.Length > 1) {
                 //TODO multi channel support - only take first channel for now
                 Debug.Log("<AudioEngine> multi-channel audio files are not supported right now - so only first channel is used, number of channels in the input file: " + this.importChannels.ToString());
+                this.importChannels = 1; //override, because only mono supported for now
             }
             this.audioData[pos] = sample[0];
             pos++;
@@ -214,56 +222,69 @@ public class AudioEngine : MonoBehaviour
         if (this.audioData != null && this.audioData.Length > 0)
         {
             this.fftSize = (int)(this.importSampleRate * 0.0232199546485261); // magic number taken from 44.100 Hz / 1024
+            // Make even if odd
+            if (this.fftSize % 2 != 0)
+                this.fftSize--;
+
             this.fftBinCount = fftSize / 2;
 
             this.fft = new Fft();
 
-            // Calculate size of chunk that will be sent to FFT routine
-            this.fftNumOfChunks = (this.audioData.Length + this.fftSize - 1) / this.fftSize; // integer round up
+            // Calculate number of chunks for the given FFT size...
+            this.audioNumOfChunks = (this.audioData.Length + this.fftSize) / this.fftSize; // integer round up
+            // ... with overlapping:
+            this.fftNumOfChunks = (int)(this.audioNumOfChunks / this.fftOverlapPercent) - 1;
 
             Debug.Log("<AudioEngine> numOfSamples: " + this.audioData.Length.ToString() +
                 " fftSize: " + this.fftSize.ToString() +
-                " numOfChunks: " + this.fftNumOfChunks.ToString() +
+                " numberOfChunks: " + this.audioNumOfChunks.ToString() +
+                " numberOfChunks with " + (100 * this.fftOverlapPercent).ToString() + "% overlap: " + this.fftNumOfChunks.ToString() +
                 " binResolution: " + (this.importSampleRate / 2 / this.fftSize).ToString() + "Hz"
                 );
 
+            
             // Create map of frequencies for the bins
             this.fftFrequencies = new double[this.fftBinCount];
             for (int i = 0; i < this.fftBinCount; i++)
                 this.fftFrequencies[i] = (double)i / this.fftBinCount * this.importSampleRate / 2;
 
-            // Do FFT per chunk
+            // Get window function factors
+            double[] window = Fft.MakeWindow(this.fftSize, Fft.WindowType.hann);
+
+            // Chunk data into overlapping parts, apply window function and run FFT
             double[][] input = new double[this.fftNumOfChunks][];
             double[][] result = new double[this.fftNumOfChunks][];
             double[][] magnitudes = new double[this.fftNumOfChunks][];
-            double[][] dBs = new double[this.fftNumOfChunks][];
 
+            int idx = 0;
+            this.fftOverlapOffset = (int)(this.fftSize * this.fftOverlapPercent);
             for (int i = 0; i < this.fftNumOfChunks; i++)
             {
                 input[i] = new double[this.fftSize];
                 result[i] = new double[this.fftSize * 2];
                 magnitudes[i] = new double[this.fftSize];
-                dBs[i] = new double[this.fftSize];
 
                 for (int j = 0; j < this.fftSize; j++)
                 {
-                    // last chunk might be smaller than fftSize
-                    if (this.audioData.Length > i * this.fftSize + j)
+                    // last chunk might be smaller than fftSize...
+                    if (this.audioData.Length > idx)
                     {
-                        input[i][j] = this.audioData[i * this.fftSize + j];
+                        input[i][j] = this.audioData[idx] * window[j];
                     } else {
-                        // fill with zeros
+                        // ... fill up with zeros then
                         input[i][j] = 0;
                     }
+                    idx++;
                 }
-                //result[i] = this.fft.RunFft(input[i], true, Fft.WindowType.hann);
-                result[i] = this.fft.RunFft(input[i], true, Fft.WindowType.flat);
-                //magnitudes[i] = this.fft.MagnitudesReal(result[i]);
+
+                // Reset index for overlap
+                idx -= this.fftOverlapOffset;
+
+                result[i] = this.fft.RunFft(input[i], true, Fft.WindowType.hann); // Don't change window function yet, only Von-Hann supported right now
                 magnitudes[i] = Fft.MagnitudesComplex(result[i]);
             }
             this.fftData = result;
             this.fftDataMagnitudes = magnitudes;
-            this.fftDatadBs = dBs;
         }
     }
 
@@ -276,13 +297,49 @@ public class AudioEngine : MonoBehaviour
 
             for (int i = 0; i < this.fftData.Length; i++)
             {
-                result[i] = fft.RunIfft(this.fftData[i]);
-                //result[i] = Fft.MagnitudesComplex(result[i]);
+                // result of ifft is in interleaved complex format - take only even indexes (the real part)
+                result[i] = fft.RunIfft(this.fftData[i])
+                    .Where((value, index) => index % 2 == 0).ToArray();
             }
-            this.ifftData = result;
-            this.CheckIfftResults();
-            this.FillPlaybackBuffer();
 
+            // Get window function factors
+            double[] window = Fft.MakeWindow(this.fftSize, Fft.WindowType.hann);
+
+            // By using Von-Hann-Window with 50% overlap we can simply sum the values in the overlap region together to revert the windowing 
+            // and to get the correct sample count again
+            this.ifftData = new double[this.audioNumOfChunks][];
+
+            for (int i = 0; i < this.audioNumOfChunks; i++)
+            {
+                this.ifftData[i] = new double[this.fftSize];
+
+                for (int j = 0; j < this.fftSize; j++)
+                {
+                    // Copy over and revert window function for the values of the non-overlap region from the first chunk AND...
+                    if (i == 0 && j < this.fftSize - this.fftOverlapOffset)
+                    {
+                        this.ifftData[i][j] = result[i][j] / window[j];
+                        continue;
+                    }
+
+                    // ...of the non-overlap region at the end
+                    if (i >= this.audioNumOfChunks - 1 && j >= this.fftSize - this.fftOverlapOffset)
+                    {
+                        this.ifftData[i][j] = result[i * 2][j] / window[j];
+                        continue;
+                    }
+                    
+                    // Sum overlapping values (this code only works for 50% overlap)
+                    if (j < this.fftSize / 2)
+                    {
+                        this.ifftData[i][j] = result[i * 2 - 1][this.fftOverlapOffset + j] + result[i * 2][j + this.fftOverlapOffset];
+                    } else {
+                        this.ifftData[i][j] = result[i * 2][j] + result[i * 2 + 1][j - this.fftOverlapOffset];
+                    }
+                }
+            }
+            //this.CheckIfftResults();
+            this.FillPlaybackBuffer();
         }
     }
 
@@ -312,12 +369,9 @@ public class AudioEngine : MonoBehaviour
         int pos = 0;
         for (int i = 0; i < this.ifftData.Length; i++)
         {
-            // result of ifft is in interleaved complex format - take only even indexes
-            double[] doubleValues = this.ifftData[i].Where((value, index) => index % 2 == 0).ToArray();
-
             // double to float conversion
             float[] values;
-            values = System.Array.ConvertAll<double, float>(doubleValues, y => (float)y);
+            values = System.Array.ConvertAll<double, float>(this.ifftData[i], y => (float)y);
 
             // float to bytes conversion
             byte[] frames;
@@ -328,27 +382,6 @@ public class AudioEngine : MonoBehaviour
         this.memoryStream = new System.IO.MemoryStream(this.playbackBuffer);
         this.memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
     }
-
-    public static byte[] GetSamplesWaveData(float[] samples)
-    {
-        int samplesCount = samples.Length;
-        var pcm = new byte[samplesCount * 2];
-        int sampleIndex = 0,
-            pcmIndex = 0;
-
-        while (sampleIndex < samplesCount)
-        {
-            var outsample = (short)(samples[sampleIndex] * short.MaxValue);
-            pcm[pcmIndex] = (byte)(outsample & 0xff);
-            pcm[pcmIndex + 1] = (byte)((outsample >> 8) & 0xff);
-
-            sampleIndex++;
-            pcmIndex += 2;
-        }
-
-        return pcm;
-    }
-
     private void Update()
     {
         if (Input.GetButtonDown("PlayStop"))

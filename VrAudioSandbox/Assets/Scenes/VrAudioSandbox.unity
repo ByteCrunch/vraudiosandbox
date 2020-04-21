@@ -763,14 +763,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9332d6571e535447b7f4c74ba0e83cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectAudioTestFile: 0
+  selectAudioTestFile: 2
   filePath: 
   importSampleRate: 0
   importBitDepth: 0
   importDurationInMs: 0
   importChannels: 0
+  audioNumOfChunks: 0
   fftSize: 0
   fftNumOfChunks: 0
+  fftOverlapPercent: 0.5
+  fftOverlapOffset: 0
   fftFrequencies: []
   fftBinCount: 0
   isPlaying: 0

@@ -24,34 +24,31 @@ public class Fft
         blackman
     };
     private WindowType windowFunction;
-    public double amp_cf;
-    public double pwr_cf;
-
 
     /// <summary>
     /// Creates array of window function factors for the current FFT size
+    /// Windowing taken from https://github.com/101010b/AudioTest/blob/master/fft.cs
     /// </summary>
-    // windowing code taken from: https://github.com/101010b/AudioTest/blob/master/fft.cs
-    private void MakeWindow()
+    public static double[] MakeWindow(int n, Fft.WindowType windowFunction)
     {
         double alpha, a0, a1, a2;
 
-        this.window = new double[this.n];
+        double[] window = new double[n];
 
-        switch (this.windowFunction)
+        switch (windowFunction)
         {
             case WindowType.hann:
-                for (int i = 0; i < this.n; i++)
-                    this.window[i] = 0.5 - 0.5 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.n - 1));
-                amp_cf = 6;
-                pwr_cf = 4.3;
+                for (int i = 0; i < n; i++)
+                    window[i] = 0.5 - 0.5 * System.Math.Cos((double)i * 2 * System.Math.PI / (n - 1));
+                //amp_cf = 6;
+                //pwr_cf = 4.3;
                 break;
 
             case WindowType.hamming:
-                for (int i = 0; i < this.n; i++)
-                    this.window[i] = 0.54 - 0.46 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.n - 1));
-                amp_cf = 5.35;
-                pwr_cf = 4.0;
+                for (int i = 0; i < n; i++)
+                    window[i] = 0.54 - 0.46 * System.Math.Cos((double)i * 2 * System.Math.PI / (n - 1));
+                //amp_cf = 5.35;
+                //pwr_cf = 4.0;
                 break;
 
             case WindowType.blackman:
@@ -59,24 +56,26 @@ public class Fft
                 a0 = (1.0 - alpha) / 2.0;
                 a1 = 0.5;
                 a2 = alpha / 2;
-                for (int i = 0; i < this.n; i++)
-                    this.window[i] =
+                for (int i = 0; i < n; i++)
+                    window[i] =
                             a0
-                        - a1 * System.Math.Cos((double)i * 2 * System.Math.PI / (this.n - 1))
-                        + a2 * System.Math.Cos((double)i * 4 * System.Math.PI / (this.n - 1));
-                amp_cf = 7.54;
-                pwr_cf = 5.2;
+                        - a1 * System.Math.Cos((double)i * 2 * System.Math.PI / (n - 1))
+                        + a2 * System.Math.Cos((double)i * 4 * System.Math.PI / (n - 1));
+                //amp_cf = 7.54;
+                //pwr_cf = 5.2;
                 break;
 
             case WindowType.flat:
             default:
-                for (int i = 0; i < this.n; i++)
-                    this.window[i] = 1.0;
-                amp_cf = 0;
-                pwr_cf = 0;
+                for (int i = 0; i < n; i++)
+                    window[i] = 1.0;
+                //amp_cf = 0;
+                //pwr_cf = 0;
                 break;
 
         }
+
+        return window;
 
     }
 
@@ -94,14 +93,6 @@ public class Fft
             input = Fft.RealToComplex(input);
 
         this.n = input.Length;
-
-        // Apply window function
-        this.windowFunction = wt;
-        this.MakeWindow();
-        for (int i = 0; i < this.n; i++)
-        {
-            input[i] *= this.window[i];
-        }
 
         this.ptr = fftw.malloc(this.n * sizeof(double));
 
@@ -140,12 +131,10 @@ public class Fft
         // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
         // In other words, applying the forward and then the backward transform will multiply the input by n. 
 
-        // Revert windowing and divide by n/2
-
-        // TODO windowing cannot be reversed this way, see: https://dsp.stackexchange.com/questions/18522/fft-window-corrupts-signal
+        // Divide by n/2
         for (int i = 0; i < this.n; i++)
         {
-            output[i] = output[i] / this.window[i] / this.n / 2;
+            output[i] = output[i] / this.n / 2;
         }
 
         fftw.free(this.ptr);
@@ -225,21 +214,4 @@ public class Fft
         }
         return y;
     }
-
-    /*
-    /// <summary>
-    /// Calculates dB for given magnitude values
-    /// </summary>
-    /// <param name="x"></param>
-    /// <returns></returns>
-    public double[] dB(double[] x)
-    {
-        int n = x.Length;
-        double[] y = new double[n];
-        for (int i = 0; i < n; i++)
-        {
-            y[i] = (double)(20 * System.Math.Log(x[i]));
-        }
-        return y;
-    }*/
 }
