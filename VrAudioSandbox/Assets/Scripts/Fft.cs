@@ -87,7 +87,7 @@ public class Fft
     /// <param name="output">array to store unnormalized transform ouput of FFT</param>
     /// <param name="real">set to true for converting double[] of real numbers to double[] of complex numbers with real and imagenary parts interleaved</param>
     /// <param name="wt">enum window_type for window function to use</param>
-    public double[] RunFft(double[] input, bool real, WindowType wt)
+    public double[] RunFft(double[] input, bool real)
     {
         if (real)
             input = Fft.RealToComplex(input);
@@ -134,7 +134,7 @@ public class Fft
         // Divide by n/2
         for (int i = 0; i < this.n; i++)
         {
-            output[i] = output[i] / this.n / 2;
+            output[i] /= this.n / 2;
         }
 
         fftw.free(this.ptr);

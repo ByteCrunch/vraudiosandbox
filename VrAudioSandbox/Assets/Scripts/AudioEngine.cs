@@ -249,7 +249,7 @@ public class AudioEngine : MonoBehaviour
                 this.fftFrequencies[i] = (double)i / this.fftBinCount * this.importSampleRate / 2;
 
             // Get window function factors
-            double[] window = Fft.MakeWindow(this.fftSize, Fft.WindowType.hann);
+            double[] window = Fft.MakeWindow(this.fftSize, Fft.WindowType.hann); // Don't change window function, only Von-Hann supported right now
 
             // Chunk data into overlapping parts, apply window function and run FFT
             double[][] input = new double[this.fftNumOfChunks][];
@@ -270,6 +270,7 @@ public class AudioEngine : MonoBehaviour
                     if (this.audioData.Length > idx)
                     {
                         input[i][j] = this.audioData[idx] * window[j];
+
                     } else {
                         // ... fill up with zeros then
                         input[i][j] = 0;
@@ -280,7 +281,7 @@ public class AudioEngine : MonoBehaviour
                 // Reset index for overlap
                 idx -= this.fftOverlapOffset;
 
-                result[i] = this.fft.RunFft(input[i], true, Fft.WindowType.hann); // Don't change window function yet, only Von-Hann supported right now
+                result[i] = this.fft.RunFft(input[i], true);
                 magnitudes[i] = Fft.MagnitudesComplex(result[i]);
             }
             this.fftData = result;
@@ -332,12 +333,13 @@ public class AudioEngine : MonoBehaviour
                     // Sum overlapping values (this code only works for 50% overlap)
                     if (j < this.fftSize / 2)
                     {
-                        this.ifftData[i][j] = result[i * 2 - 1][this.fftOverlapOffset + j] + result[i * 2][j + this.fftOverlapOffset];
+                        this.ifftData[i][j] = result[i * 2 - 1][this.fftOverlapOffset + j] + result[i * 2][j];
                     } else {
                         this.ifftData[i][j] = result[i * 2][j] + result[i * 2 + 1][j - this.fftOverlapOffset];
                     }
                 }
             }
+
             //this.CheckIfftResults();
             this.FillPlaybackBuffer();
         }
@@ -382,6 +384,28 @@ public class AudioEngine : MonoBehaviour
         this.memoryStream = new System.IO.MemoryStream(this.playbackBuffer);
         this.memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
     }
+
+    
+    // Testing
+    private void FftTest() {
+        float[] testInF = { 0.00000002345f, -0.00000045464f, 1.0040346634f, -0.86747333346f };
+        double[] testInD = new double[testInF.Length];
+
+        for (int i = 0; i<testInD.Length; i++)
+            testInD[i] = testInF[i];
+
+        Fft testFft = new Fft();
+        double[] fftResultD = testFft.RunFft(testInD, true);
+        double[] ifftResultD = testFft.RunIfft(fftResultD);
+        float[] ifftResultF;
+        ifftResultF = System.Array.ConvertAll<double, float>(ifftResultD, y => (float)y);
+
+        for (int i = 0; i< testInF.Length; i++)
+        {
+            Debug.Log("INPUT: " + testInF[i] + " OUPUT: " + ifftResultF[i * 2]);
+        }
+    } 
+    
     private void Update()
     {
         if (Input.GetButtonDown("PlayStop"))
