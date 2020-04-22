@@ -9,7 +9,6 @@ public class SpectrumHelper : MonoBehaviour
 
     }
 
-
     private void Update()
     {
         if (transform.hasChanged)
@@ -24,6 +23,10 @@ public class SpectrumHelper : MonoBehaviour
             
     }
 
+    /// <summary>
+    /// Calculates combined bounds of all mesh renderers
+    /// </summary>
+    /// <returns>Combined bounds of all mesh renderers</returns>
     private Bounds GetSpectrumBounds()
     {
         Renderer[] renderers = GetComponentsInChildren<Renderer>();

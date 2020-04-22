@@ -53,7 +53,9 @@ public class AudioEngine : MonoBehaviour
     private SpectrumMeshGenerator spectrum;
     private Fft fft;
 
-    // Make sure audio engine is loaded before Start() routines of other GameObjects
+    /// <summary>
+    /// Makes sure audio engine is loaded before Start() routines of other GameObjects
+    /// </summary>
     void Awake()
     {
 
@@ -94,6 +96,9 @@ public class AudioEngine : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Shows file browser dialog in standalone mode
+    /// </summary>
     IEnumerator ShowLoadDialogCoroutine()
     {
         // Show a load file dialog and wait for a response from user
@@ -108,6 +113,9 @@ public class AudioEngine : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Loads audio data from external file
+    /// </summary>
     public void LoadAudioData()
     {
         // Read in wav file and convert into a float[] of samples
@@ -140,6 +148,9 @@ public class AudioEngine : MonoBehaviour
         this.DoIfft();
     }
 
+    /// <summary>
+    /// Start playback of IFFT audio data
+    /// </summary>
     public void Play()
     {
         Debug.Log("<AudioEngine> Play");
@@ -160,6 +171,9 @@ public class AudioEngine : MonoBehaviour
         this.isPlaying = true;
     }
 
+    /// <summary>
+    /// Stop playback of IFFT audio data
+    /// </summary>
     public void Stop() 
     {
         this.waveOut.Stop();
@@ -174,6 +188,10 @@ public class AudioEngine : MonoBehaviour
         Debug.Log("<AudioEngine> Playback stopped");
     }
 
+    /// <summary>
+    /// Provides current playback position
+    /// </summary>
+    /// <returns>Playback position in milliseconds</returns>
     public double GetPositionInMs()
     {
         long bytePos = this.loopStream.Position;
@@ -187,11 +205,18 @@ public class AudioEngine : MonoBehaviour
         return ms;
     }
 
+    /// <summary>
+    /// Set looping of audio playback
+    /// </summary>
+    /// <param name="loop">true: enable looping, false: disable looping</param>
     public void SetAudioLooping(bool loop)
     {
         this.loopStream.EnableLooping = loop;
     }
 
+    /// <summary>
+    /// Rewind playback of IFFT audio data
+    /// </summary>
     public void Rewind()
     {
         Debug.Log("<AudioEngine> Rewind");
@@ -203,6 +228,9 @@ public class AudioEngine : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Free audio resources
+    /// </summary>
     public void StopAudioEngine()
     {
         if (this.waveOut != null)
@@ -221,7 +249,9 @@ public class AudioEngine : MonoBehaviour
         this.isPlaying = false;
     }
 
-
+    /// <summary>
+    /// Create overlapping & windowing and perform FFT
+    /// </summary>
     public void DoFft()
     {
         if (this.audioData != null && this.audioData.Length > 0)
@@ -294,6 +324,9 @@ public class AudioEngine : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Performs IFFT and removes overlapping & windowing
+    /// </summary>
     public void DoIfft()
     {
         if (this.fftData != null && this.fftData.Length > 0)
@@ -345,31 +378,13 @@ public class AudioEngine : MonoBehaviour
                 }
             }
 
-            //this.CheckIfftResults();
             this.FillPlaybackBuffer();
         }
     }
 
-    private void CheckIfftResults()
-    {
-        string[] lines = new string[this.audioData.Length];
-        for (int i = 0; i < this.ifftData.Length; i++)
-        {
-            for (int j = 0; j < this.ifftData[i].Length; j++)
-            {
-
-                if (i * this.fftSize + j >= this.audioData.Length)
-                    break;
-                lines[i * this.fftSize + j] =
-                    (this.audioData[i * this.fftSize + j]).ToString() + "\t\t\t" +
-                    (this.ifftData[i][j]).ToString() + "\t\t\t" +
-                    (this.audioData[i * this.fftSize + j] / this.ifftData[i][j]).ToString() + "\t\t\t" +
-                    (this.audioData[i * this.fftSize + j] - this.ifftData[i][j]).ToString();
-            }
-        }
-        string path = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop);
-        System.IO.File.WriteAllLines(path + "\\ifft-check.txt", lines);
-    }
+    /// <summary>
+    /// Converts IFFT data to bytes and fills playback buffer
+    /// </summary>
     private void FillPlaybackBuffer()
     {
         this.playbackBuffer = new byte[this.ifftData.Length * this.fftSize * 8];
@@ -386,18 +401,14 @@ public class AudioEngine : MonoBehaviour
             System.Array.Copy(frames, 0, this.playbackBuffer, pos, frames.Length);
             pos += frames.Length;
         }
-
-        /*
-        // Append a 0 for LoopStream to detect end of audio correctly
-        System.Array.Resize(ref this.playbackBuffer, this.playbackBuffer.Length + 1);
-        this.playbackBuffer[this.playbackBuffer.GetUpperBound(0)] = 0;*/
-
         this.memoryStream = new System.IO.MemoryStream(this.playbackBuffer);
         this.memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
     }
 
-    
-    // Testing
+
+    /// <summary>
+    /// Test function for FFT/IFFT routines
+    /// </summary>
     private static void FftTest() {
         float[] testInF = { 0.00000002345f, -0.00000045464f, 1.0040346634f, -0.86747333346f };
         double[] testInD = new double[testInF.Length];
@@ -417,6 +428,9 @@ public class AudioEngine : MonoBehaviour
         }
     } 
     
+    /// <summary>
+    /// Input handling
+    /// </summary>
     private void Update()
     {
         if (Input.GetButtonDown("PlayStop"))
@@ -435,6 +449,9 @@ public class AudioEngine : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Exit handler
+    /// </summary>
     void OnApplicationQuit()
     {
         Debug.Log("Exit");

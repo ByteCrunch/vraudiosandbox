@@ -1,6 +1,9 @@
 ﻿/// <summary>
 /// Stream for looping playback
 /// </summary>
+/// 
+
+// by Mark Heath, taken from https://markheath.net/post/looped-playback-in-net-with-naudio
 
 using NAudio;
 

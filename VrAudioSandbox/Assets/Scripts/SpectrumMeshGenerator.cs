@@ -67,6 +67,9 @@ public class SpectrumMeshGenerator : MonoBehaviour
         this.GenerateMeshFromAudioData();
     }
 
+    /// <summary>
+    /// Generates Meshes from FFT data
+    /// </summary>
     public void GenerateMeshFromAudioData()
     {
         this.meshObj = new GameObject[this.audioEngine.fftData.Length];
@@ -143,6 +146,10 @@ public class SpectrumMeshGenerator : MonoBehaviour
             
     }*/
 
+    /// <summary>
+    /// Sets the vertices of ground raster and FFT data peaks
+    /// </summary>
+    /// <param name="meshIdx">index of mesh to fill with vertices (= index of corresponding FFT chunk)</param>
     private void SetVertices(int meshIdx)
     {
         this.countOfRasterVertices = 2 * (this.audioEngine.fftBinCount + 1);
@@ -184,6 +191,9 @@ public class SpectrumMeshGenerator : MonoBehaviour
         this.meshes[meshIdx].vertices = this.vertices[meshIdx];
     }
 
+    /// <summary>
+    /// Resets all meshes materials to default
+    /// </summary>
     public void ResetMeshColors()
     {
         for (int i = 0; i < this.audioEngine.fftData.Length; i++)
@@ -192,6 +202,10 @@ public class SpectrumMeshGenerator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Creates color lerp for mesh peaks
+    /// </summary>
+    /// <param name="meshIdx">index of mesh to colorize (= index of corresponding FFT chunk)</param>
     private void SetMeshColors(int meshIdx)
     {
         this.colors[meshIdx] = new Color32[this.vertices[meshIdx].Length];
@@ -209,9 +223,14 @@ public class SpectrumMeshGenerator : MonoBehaviour
         this.meshes[meshIdx].colors32 = this.colors[meshIdx];
     }
 
+    /// <summary>
+    /// Creates triangles for the chosen mesh
+    /// </summary>
+    /// <param name="meshIdx">index of mesh to create triangles for (= index of corresponding FFT chunk)</param>
     private void SetTriangles(int meshIdx)
     {
-        this.triangles[meshIdx] = new int[this.audioEngine.fftBinCount * 4 * 3]; //4 pyramid sides per fft bin (without base), 3 vertices indices per side
+        // 4 pyramid sides per fft bin (without base), 3 vertices indices per side
+        this.triangles[meshIdx] = new int[this.audioEngine.fftBinCount * 4 * 3]; 
 
         for (int i = 0; i < this.triangles[meshIdx].Length - 12; i += 12)
         {
@@ -235,6 +254,10 @@ public class SpectrumMeshGenerator : MonoBehaviour
         this.meshes[meshIdx].triangles = this.triangles[meshIdx];
     }
 
+    /// <summary>
+    /// Scales the whole mesh 
+    /// </summary>
+    /// <param name="offset">positive or negative offset applied to y-scale</param>
     public void ScaleMeshY(float offset)
     {
         Vector3 scale = gameObject.transform.localScale;

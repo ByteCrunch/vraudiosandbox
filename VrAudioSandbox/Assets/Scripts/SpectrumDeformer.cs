@@ -17,6 +17,9 @@ public class SpectrumDeformer : MonoBehaviour
         
     }
 
+    /// <summary>
+    /// Clones the mesh vertices and preparation for deforming mesh
+    /// </summary>
     public void MeshGenerated()
     {
         this.spectrum = GetComponent<SpectrumMeshGenerator>();
@@ -38,6 +41,12 @@ public class SpectrumDeformer : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// Moves FFT vertices to the chosen direction for the given point and radius
+    /// </summary>
+    /// <param name="point">point for vertices to be affected</param>
+    /// <param name="direction">direction of movement</param>
+    /// <param name="radius">radius for vertices to be affected</param>
     public void DeformMesh(Vector3 point, Vector3 direction, float radius)
     {
         for (int j = 0; j < this.modifiedVertices.Length; j++)
