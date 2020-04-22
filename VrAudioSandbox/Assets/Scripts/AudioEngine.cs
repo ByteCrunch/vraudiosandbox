@@ -29,7 +29,7 @@ public class AudioEngine : MonoBehaviour
 
     private NAudio.Wave.WaveFileReader waveReader;
     private NAudio.Wave.WaveOutEvent waveOut;
-    private NAudio.Wave.IWaveProvider waveProvider;
+    private NAudio.Wave.WaveStream waveProvider;
     private LoopStream loopStream;
 
     private float[] audioData;
@@ -151,7 +151,8 @@ public class AudioEngine : MonoBehaviour
                 );
             this.waveOut = new NAudio.Wave.WaveOutEvent();
             this.waveOut.PlaybackStopped += OnPlaybackStopped;
-            this.waveOut.Init(this.waveProvider);
+            this.loopStream = new LoopStream(this.waveProvider);
+            this.waveOut.Init(this.loopStream);
             this.waveOut.Play();
         } else {
             this.waveOut.Play();
@@ -170,14 +171,18 @@ public class AudioEngine : MonoBehaviour
 
     private void OnPlaybackStopped(object sender, System.EventArgs e)
     {
-        Debug.Log("<AudioEngine> " +e.ToString());
+        Debug.Log("<AudioEngine> Playback stopped");
     }
 
     public double GetPositionInMs()
     {
-        //long bytePos = this.loopStream.Position;
-        long bytePos = this.memoryStream.Position;
+        long bytePos = this.loopStream.Position;
+        //long bytePos = this.memoryStream.Position;
         double ms = bytePos / this.importSampleRate / 4 * 1000.0;
+
+        // Loop
+        if (bytePos >= this.memoryStream.Length)
+            this.Rewind();
 
         return ms;
     }
@@ -192,8 +197,8 @@ public class AudioEngine : MonoBehaviour
         Debug.Log("<AudioEngine> Rewind");
         if (this.waveOut != null)
         {
-            //this.loopStream.Position = 0;
-            this.memoryStream.Position = 0;
+            this.loopStream.Position = 0;
+            //this.memoryStream.Position = 0;
             this.spectrum.ResetMeshColors();
         }
     }
@@ -381,13 +386,19 @@ public class AudioEngine : MonoBehaviour
             System.Array.Copy(frames, 0, this.playbackBuffer, pos, frames.Length);
             pos += frames.Length;
         }
+
+        /*
+        // Append a 0 for LoopStream to detect end of audio correctly
+        System.Array.Resize(ref this.playbackBuffer, this.playbackBuffer.Length + 1);
+        this.playbackBuffer[this.playbackBuffer.GetUpperBound(0)] = 0;*/
+
         this.memoryStream = new System.IO.MemoryStream(this.playbackBuffer);
         this.memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
     }
 
     
     // Testing
-    private void FftTest() {
+    private static void FftTest() {
         float[] testInF = { 0.00000002345f, -0.00000045464f, 1.0040346634f, -0.86747333346f };
         double[] testInD = new double[testInF.Length];
 

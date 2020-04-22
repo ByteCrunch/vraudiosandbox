@@ -43,7 +43,8 @@ public class SpectrumMeshGenerator : MonoBehaviour
 
             for (int i = 0; i < posIdx; i++)
             {
-                this.mRenderers[i].material = Resources.Load("Materials/SpectrumMatPlaying") as Material;
+                if (i < this.mRenderers.Length)
+                    this.mRenderers[i].material = Resources.Load("Materials/SpectrumMatPlaying") as Material;
             }
 
             // workaround until loopstream event will work to trigger reset of spectrum material
