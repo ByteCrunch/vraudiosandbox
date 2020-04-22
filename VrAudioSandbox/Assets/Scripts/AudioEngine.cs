@@ -320,7 +320,7 @@ public class AudioEngine : MonoBehaviour
 
                 result[i] = this.fft.RunFft(input[i], true);
                 magnitudes[i] = Fft.GetMagnitudes(result[i]);
-                phases[i] = Fft.GetPhaseInformation(result[i]);
+                phases[i] = Fft.GetPhaseInformation(result[i], magnitudes[i]);
             }
             this.fftData = result;
             this.fftDataMagnitudes = magnitudes;

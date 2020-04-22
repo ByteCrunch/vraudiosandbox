@@ -128,8 +128,11 @@ public class Fft
         double[] output = new double[this.n];
         Marshal.Copy(this.ptr, output, 0, this.n);
 
-        // FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
-        // In other words, applying the forward and then the backward transform will multiply the input by n. 
+        /*
+         * FFTW computes an unnormalized transform, in that there is no coefficient in front of the summation in the DFT.
+         * In other words, applying the forward and then the backward transform will multiply the input by n. 
+         * http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028DFT_0029.html
+         */
 
         // Divide by n/2
         for (int i = 0; i < this.n; i++)
@@ -167,14 +170,11 @@ public class Fft
     /// <returns>double[] with absolute values and normalized transform</returns>
     public static double[] GetMagnitudes(double[] x)
     {
-        //double cf = 2.0 / 32767.0; // what is the meaning of this constant factor?
-        double cf = 1.0;
-
         int n = x.Length / 2;
         double[] y = new double[n];
         for (int i = 0; i < n; i++)
         {
-            y[i] = cf * System.Math.Sqrt((x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]) / (n * n));
+            y[i] = System.Math.Sqrt((x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]) / (n * n));
         }
         return y;
     }
@@ -182,15 +182,44 @@ public class Fft
     /// <summary>
     /// Calculates the phase information values for a double[] of complex fft data
     /// </summary>
-    /// <param name="x">input double[] with real and imagenary parts interleaved</param>
+    /// <param name="fftData">input double[] of FFT data with real and imagenary parts interleaved</param>
+    /// <param name="magnitudes">corresponding double[] magnitudes (size half of fftData array)</param>
     /// <returns>double[] with phase information</returns>
-    public static double[] GetPhaseInformation(double[] x)
+    public static double[] GetPhaseInformation(double[] fftData, double[] magnitudes)
     {
-        int n = x.Length / 2;
+        int n = fftData.Length / 2;
         double[] y = new double[n];
+
+        /*
+         * "Even a small floating rounding off error will amplify the result and manifest incorrectly
+         * as useful phase information. [...] The solution is to define a tolerance threshold and
+         * ignore all the computed phase values that are below the threshold."
+         * https://www.gaussianwaves.com/2015/11/interpreting-fft-results-obtaining-magnitude-and-phase-information/
+         */
+
+        // Find abs(maximum) of provided magnitudes data...
+        double max = 0;
         for (int i = 0; i < n; i++)
         {
-            y[i] = System.Math.Atan2(x[2 * i + 1], x[2 * i]) * 180 / System.Math.PI;
+            double z = System.Math.Abs(magnitudes[i]);
+            if (z > max)
+                max = z;
+        }
+        // ...and use 1/10000th of it as threshold
+        double threshold = max / 10000;
+
+        // Calculate phase information if above threshold
+        for (int i = 0; i < n; i++)
+        {
+            if (System.Math.Abs(magnitudes[i]) > threshold)
+            {
+                // Calculate phase information
+                y[i] = System.Math.Atan2(fftData[2 * i + 1], fftData[2 * i]) * 180 / System.Math.PI;
+            } else {
+                // Ignore value
+                y[i] = 0;
+            }
+            
         }
         return y;
     }
