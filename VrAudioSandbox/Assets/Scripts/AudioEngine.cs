@@ -23,7 +23,7 @@ public class AudioEngine : MonoBehaviour
     [HideInInspector]
     public double[][] fftData;
     public double[][] fftDataMagnitudes;
-    public double[][] fftDatadBs;
+    public double[][] fftDataPhases;
 
     public double[][] ifftData;
 
@@ -290,6 +290,7 @@ public class AudioEngine : MonoBehaviour
             double[][] input = new double[this.fftNumOfChunks][];
             double[][] result = new double[this.fftNumOfChunks][];
             double[][] magnitudes = new double[this.fftNumOfChunks][];
+            double[][] phases = new double[this.fftNumOfChunks][];
 
             int idx = 0;
             this.fftOverlapOffset = (int)(this.fftSize * this.fftOverlapPercent);
@@ -298,6 +299,7 @@ public class AudioEngine : MonoBehaviour
                 input[i] = new double[this.fftSize];
                 result[i] = new double[this.fftSize * 2];
                 magnitudes[i] = new double[this.fftSize];
+                phases[i] = new double[this.fftSize];
 
                 for (int j = 0; j < this.fftSize; j++)
                 {
@@ -318,9 +320,11 @@ public class AudioEngine : MonoBehaviour
 
                 result[i] = this.fft.RunFft(input[i], true);
                 magnitudes[i] = Fft.GetMagnitudes(result[i]);
+                phases[i] = Fft.GetPhaseInformation(result[i]);
             }
             this.fftData = result;
             this.fftDataMagnitudes = magnitudes;
+            this.fftDataPhases = phases;
         }
     }
 
