@@ -165,7 +165,7 @@ public class Fft
     /// </summary>
     /// <param name="x">input double[] with real and imagenary parts interleaved</param>
     /// <returns>double[] with absolute values and normalized transform</returns>
-    public static double[] MagnitudesComplex(double[] x)
+    public static double[] GetMagnitudes(double[] x)
     {
         //double cf = 2.0 / 32767.0; // what is the meaning of this constant factor?
         double cf = 1.0;
@@ -180,21 +180,17 @@ public class Fft
     }
 
     /// <summary>
-    /// Calculates the absolute values for a double[] of real numbers and normalize the transform.
+    /// Calculates the phase information values for a double[] of complex fft data
     /// </summary>
-    /// <param name="x">input double[] with real numbers</param>
-    /// <returns>double[] with absolute values and normalized transform</returns>
-    public static double[] MagnitudesReal(double[] x)
+    /// <param name="x">input double[] with real and imagenary parts interleaved</param>
+    /// <returns>double[] with phase information</returns>
+    public static double[] GetPhaseInformation(double[] x)
     {
-
-        //double cf = 2.0 / 32767.0; // what is the meaning of this constant factor?
-        double cf = 1.0;
-
-        int n = x.Length;
+        int n = x.Length / 2;
         double[] y = new double[n];
         for (int i = 0; i < n; i++)
         {
-            y[i] = cf * System.Math.Abs(x[i]) / n;
+            y[i] = System.Math.Atan2(x[2 * i + 1], x[2 * i]) * 180 / System.Math.PI;
         }
         return y;
     }
@@ -204,7 +200,7 @@ public class Fft
     /// </summary>
     /// <param name="x"></param>
     /// <returns></returns>
-    public static double[] PowerInDb(double[] x)
+    public static double[] GetPowerInDb(double[] x)
     {
         int n = x.Length / 2;
         double[] y = new double[n];

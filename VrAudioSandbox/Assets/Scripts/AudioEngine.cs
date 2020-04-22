@@ -317,7 +317,7 @@ public class AudioEngine : MonoBehaviour
                 idx -= this.fftOverlapOffset;
 
                 result[i] = this.fft.RunFft(input[i], true);
-                magnitudes[i] = Fft.MagnitudesComplex(result[i]);
+                magnitudes[i] = Fft.GetMagnitudes(result[i]);
             }
             this.fftData = result;
             this.fftDataMagnitudes = magnitudes;
