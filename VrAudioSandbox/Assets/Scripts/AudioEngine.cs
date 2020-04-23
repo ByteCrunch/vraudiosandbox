@@ -321,10 +321,12 @@ public class AudioEngine : MonoBehaviour
                 result[i] = this.fft.RunFft(input[i], true);
                 magnitudes[i] = Fft.GetMagnitudes(result[i]);
                 phases[i] = Fft.GetPhaseInformation(result[i], magnitudes[i]);
+                //phases[i] = Fft.GetPhaseInformation(result[i]);
+
+                this.fftData = result;
+                this.fftDataMagnitudes = magnitudes;
+                this.fftDataPhases = phases;
             }
-            this.fftData = result;
-            this.fftDataMagnitudes = magnitudes;
-            this.fftDataPhases = phases;
         }
     }
 
@@ -341,7 +343,9 @@ public class AudioEngine : MonoBehaviour
             for (int i = 0; i < this.fftData.Length; i++)
             {
                 // result of ifft is in interleaved complex format - take only even indexes (the real part)
-                result[i] = fft.RunIfft(this.fftData[i])
+                /*result[i] = fft.RunIfft(this.fftData[i])
+                    .Where((value, index) => index % 2 == 0).ToArray();*/
+                result[i] = fft.RunIfft(Fft.GetFftDataFromMagnitudeAndPhase(this.fftDataMagnitudes[i], this.fftDataPhases[i])) // Testing with fftData from magnitudes and phase
                     .Where((value, index) => index % 2 == 0).ToArray();
             }
 

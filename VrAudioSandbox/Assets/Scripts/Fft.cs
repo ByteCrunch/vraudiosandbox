@@ -96,7 +96,6 @@ public class Fft
 
         this.ptr = fftw.malloc(this.n * sizeof(double));
 
-        //this.fplanForward = fftw.r2r_1d(this.n, this.pin, this.pout, fftw_kind.R2HC, fftw_flags.Measure);
         // (n / 2 because complex numbers are stored as pairs of doubles)
         this.fplanForward = fftw.dft_1d(this.n / 2, this.ptr, this.ptr, fftw_direction.Forward, fftw_flags.Measure);
 
@@ -164,23 +163,23 @@ public class Fft
     }
 
     /// <summary>
-    /// Calculates the absolute values for a double[] of complex numbers and normalize the transform.
+    /// Calculates the absolute values for a double[] of complex numbers.
     /// </summary>
     /// <param name="x">input double[] with real and imagenary parts interleaved</param>
-    /// <returns>double[] with absolute values and normalized transform</returns>
+    /// <returns>double[] with absolute values</returns>
     public static double[] GetMagnitudes(double[] x)
     {
         int n = x.Length / 2;
         double[] y = new double[n];
         for (int i = 0; i < n; i++)
         {
-            y[i] = System.Math.Sqrt((x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]) / (n * n));
+            y[i] = System.Math.Sqrt(x[2 * i] * x[2 * i] + x[2 * i + 1] * x[2 * i + 1]);
         }
         return y;
     }
 
     /// <summary>
-    /// Calculates the phase information values for a double[] of complex fft data
+    /// Calculates the phase information values for a double[] of complex fft data WITH threshold limit
     /// </summary>
     /// <param name="fftData">input double[] of FFT data with real and imagenary parts interleaved</param>
     /// <param name="magnitudes">corresponding double[] magnitudes (size half of fftData array)</param>
@@ -189,39 +188,60 @@ public class Fft
     {
         int n = fftData.Length / 2;
         double[] y = new double[n];
+        double threshold = 0;
 
+        // Use threshold limit if magnitudes were provided
         /*
-         * "Even a small floating rounding off error will amplify the result and manifest incorrectly
-         * as useful phase information. [...] The solution is to define a tolerance threshold and
-         * ignore all the computed phase values that are below the threshold."
-         * https://www.gaussianwaves.com/2015/11/interpreting-fft-results-obtaining-magnitude-and-phase-information/
-         */
+            * "Even a small floating rounding off error will amplify the result and manifest incorrectly
+            * as useful phase information. [...] The solution is to define a tolerance threshold and
+            * ignore all the computed phase values that are below the threshold."
+            * https://www.gaussianwaves.com/2015/11/interpreting-fft-results-obtaining-magnitude-and-phase-information/
+            */
 
         // Find abs(maximum) of provided magnitudes data...
         double max = 0;
         for (int i = 0; i < n; i++)
         {
-            double z = System.Math.Abs(magnitudes[i]);
-            if (z > max)
-                max = z;
+            double m = magnitudes[i];
+            if (m > max)
+                max = m;
         }
         // ...and use 1/10000th of it as threshold
-        double threshold = max / 10000;
+        threshold = max / 10000;
 
-        // Calculate phase information if above threshold
+        // Calculate phase information with above threshold
         for (int i = 0; i < n; i++)
         {
-            if (System.Math.Abs(magnitudes[i]) > threshold)
+            if (magnitudes[i] > threshold)
             {
                 // Calculate phase information
-                y[i] = System.Math.Atan2(fftData[2 * i + 1], fftData[2 * i]) * 180 / System.Math.PI;
+                y[i] = System.Math.Atan2(fftData[2 * i + 1], fftData[2 * i]) * (180 / System.Math.PI);
             } else {
                 // Ignore value
                 y[i] = 0;
             }
-            
-        }
+        }       
         return y;
+    }
+
+    /// <summary>
+    /// Returns FFT complex data for use in IFFT from magnitudes and phase information
+    /// </summary>
+    /// <param name="magnitudes">double[] with magnitudes</param>
+    /// <param name="phases">double[] with phase information</param>
+    /// <returns></returns>
+    public static double[] GetFftDataFromMagnitudeAndPhase(double[] magnitudes, double[] phases)
+    {
+        int n = magnitudes.Length;
+        double[] fftData = new double[n * 2];
+
+        for (int i = 0; i < n; i++)
+        {
+            fftData[i * 2] = magnitudes[i] * System.Math.Cos(phases[i]); // real part
+            fftData[i * 2 + 1] = magnitudes[i] * System.Math.Sin(phases[i]); // imagenary part
+        }
+
+        return fftData;
     }
 
     /// <summary>

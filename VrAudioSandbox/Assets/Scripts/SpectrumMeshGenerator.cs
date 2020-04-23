@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class SpectrumMeshGenerator : MonoBehaviour
 {
-    public float dataScale;
     public float edgeLengthOfRaster;
 
     private AudioEngine audioEngine;
@@ -183,7 +182,8 @@ public class SpectrumMeshGenerator : MonoBehaviour
         for (int i = 0; i < this.countOfPeakVertices; i++) {
             Vector3 p;
             p.x = center.x + i * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
-            p.y = center.y + (float)(System.Math.Abs(this.audioEngine.fftDataMagnitudes[meshIdx][i])) * this.dataScale;
+            p.y = center.y + (float)this.audioEngine.fftDataMagnitudes[meshIdx][i] * 0.01f;
+            //p.y = center.y + (float)this.audioEngine.fftDataPhases[meshIdx][i] * 0.02f;
             p.z = center.z + meshIdx * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
 
             this.vertices[meshIdx][this.countOfRasterVertices+i] = p;
@@ -206,7 +206,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
     /// Creates color lerp for mesh peaks
     /// </summary>
     /// <param name="meshIdx">index of mesh to colorize (= index of corresponding FFT chunk)</param>
-    private void SetMeshColors(int meshIdx)
+    public void SetMeshColors(int meshIdx)
     {
         this.colors[meshIdx] = new Color32[this.vertices[meshIdx].Length];
 
