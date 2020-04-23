@@ -59,6 +59,7 @@ public class SpectrumDeformer : MonoBehaviour
                 var distance = (point - this.modifiedVertices[j][i]).magnitude;
                 if (distance < radius)
                 {
+                    // TODO Limit new position according y-scale of mesh, don't allow positions less than 0
                     var newVert = this.modifiedVertices[j][i] + direction * this.deformFactor;
                     this.modifiedVertices[j].RemoveAt(i);
                     this.modifiedVertices[j].Insert(i, newVert);
@@ -70,6 +71,7 @@ public class SpectrumDeformer : MonoBehaviour
             {
                 Debug.Log("<SpectrumDeformer> mesh #"+ j.ToString() + " modified");
                 this.spectrum.meshes[j].SetVertices(this.modifiedVertices[j]);
+                this.spectrum.SetMeshColors(j);
             }
         }
 

@@ -283,8 +283,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 445837494}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 19.88, y: 9.61, z: 3.5}
-  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
+  m_LocalPosition: {x: 19.88, y: 9.5, z: 3.5}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_Children: []
   m_Father: {fileID: 544046224}
   m_RootOrder: 0
@@ -318,7 +318,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 3d938759d8b7a414988ec3261fb5265d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -488,7 +488,7 @@ Transform:
   m_GameObject: {fileID: 643051998}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1.5, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 200159756}
   m_Father: {fileID: 87464421}
@@ -519,7 +519,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55fbd980de426484ebae88884aa2fd46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dataScale: 1
   edgeLengthOfRaster: 0.006
   meshes: []
 --- !u!1 &705507993
@@ -763,7 +762,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9332d6571e535447b7f4c74ba0e83cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectAudioTestFile: 0
+  selectAudioTestFile: 4
   filePath: 
   importSampleRate: 0
   importBitDepth: 0

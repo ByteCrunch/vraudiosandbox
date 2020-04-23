@@ -24,7 +24,7 @@ public class SpectrumHelper : MonoBehaviour
     }
 
     /// <summary>
-    /// Calculates combined bounds of all mesh renderers
+    /// Calculates combined bounds of all mesh renderers combined
     /// </summary>
     /// <returns>Combined bounds of all mesh renderers</returns>
     private Bounds GetSpectrumBounds()
