@@ -215,7 +215,7 @@ public class Fft
             if (magnitudes[i] > threshold)
             {
                 // Calculate phase information
-                y[i] = System.Math.Atan2(fftData[2 * i + 1], fftData[2 * i]) * (180 / System.Math.PI);
+                y[i] = System.Math.Atan2(fftData[2 * i + 1], fftData[2 * i]);
             } else {
                 // Ignore value
                 y[i] = 0;

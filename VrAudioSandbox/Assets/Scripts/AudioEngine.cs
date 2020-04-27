@@ -348,6 +348,8 @@ public class AudioEngine : MonoBehaviour
                 result[i] = fft.RunIfft(Fft.GetFftDataFromMagnitudeAndPhase(this.fftDataMagnitudes[i], this.fftDataPhases[i])) // Testing with fftData from magnitudes and phase
                     .Where((value, index) => index % 2 == 0).ToArray();
             }
+            
+            //this.PrintFftData(fft.RunIfft(this.fftData[1337]), fft.RunIfft(Fft.GetFftDataFromMagnitudeAndPhase(this.fftDataMagnitudes[1337], this.fftDataPhases[1337])), "fftdata.txt");
 
             // Get window function factors
             double[] window = Fft.MakeWindow(this.fftSize, Fft.WindowType.hann);
@@ -435,7 +437,25 @@ public class AudioEngine : MonoBehaviour
             Debug.Log("INPUT: " + testInF[i] + " OUPUT: " + ifftResultF[i * 2]);
         }
     } 
-    
+
+    private void PrintFftData(double[] fftData1, double[] fftData2, string fileName)
+    {
+        List<string> lines = new List<string>();
+        lines.Add("fftData-Length: "+fftData.Length.ToString());
+        lines.Add("Re1\t\t\t\t\tImg1\t\t\t\t\tRe2\t\t\t\t\tImg2\t\t\t\t\tRe1-Re2\t\t\t\t\tImg1-Img2");
+
+        for (int i = 0; i < fftData.Length / 2; i++)
+        {
+            lines.Add(
+                fftData1[2 * i].ToString() + "\t\t\t" + fftData1[2 * i + 1].ToString() + "\t\t\t" +
+                fftData2[2 * i].ToString() + "\t\t\t" + fftData2[2 * i + 1].ToString() + "\t\t\t" +
+                (fftData1[2 * i] - fftData2[2 * i]).ToString() + "\t\t\t" + (fftData1[2 * i + 1] - fftData2[2 * i + 1]).ToString());
+        }      
+        
+        System.IO.File.WriteAllLines(@"C:\Users\bytecrunch\Desktop\" + fileName, lines);
+
+    }
+
     /// <summary>
     /// Input handling
     /// </summary>
