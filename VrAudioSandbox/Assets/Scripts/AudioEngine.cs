@@ -281,7 +281,7 @@ public class AudioEngine : MonoBehaviour
             // Create map of frequencies for the bins
             this.fftFrequencies = new double[this.fftBinCount];
             for (int i = 0; i < this.fftBinCount; i++)
-                this.fftFrequencies[i] = (double)i / this.fftBinCount * this.importSampleRate / 2;
+                this.fftFrequencies[i] = (double)(i+1) / this.fftBinCount * this.importSampleRate / 2;
 
             // Get window function factors
             double[] window = Fft.MakeWindow(this.fftSize, Fft.WindowType.hann); // Don't change window function, only Von-Hann supported right now
@@ -343,9 +343,7 @@ public class AudioEngine : MonoBehaviour
             for (int i = 0; i < this.fftData.Length; i++)
             {
                 // result of ifft is in interleaved complex format - take only even indexes (the real part)
-                /*result[i] = fft.RunIfft(this.fftData[i])
-                    .Where((value, index) => index % 2 == 0).ToArray();*/
-                result[i] = fft.RunIfft(Fft.GetFftDataFromMagnitudeAndPhase(this.fftDataMagnitudes[i], this.fftDataPhases[i])) // Testing with fftData from magnitudes and phase
+                result[i] = fft.RunIfft(Fft.GetFftDataFromMagnitudeAndPhase(this.fftDataMagnitudes[i], this.fftDataPhases[i]))
                     .Where((value, index) => index % 2 == 0).ToArray();
             }
             

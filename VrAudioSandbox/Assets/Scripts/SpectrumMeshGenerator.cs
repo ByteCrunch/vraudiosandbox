@@ -107,19 +107,11 @@ public class SpectrumMeshGenerator : MonoBehaviour
             // Only Mesh.OptimizeIndexBuffers is uncritical -
             // Mesh.Optimize() will basically also call Mesh.OptimizeReorderVertexBuffer() which will mess up the order and f*ck things up I depend on later.
             this.meshes[i].OptimizeIndexBuffers();
-
-            /*
-            // Text for frequency legend - very crude code for testing
-            TextMesh textMesh = GameObject.Find("FreqLegend").GetComponent<TextMesh>();
-            string frequencies = "";
-
-            for (int f = this.audioEngine.fftFrequencies.Length - 1; f >= 0; f--)
-            {
-                frequencies += System.Math.Round(this.audioEngine.fftFrequencies[f], 2).ToString() + " Hz\n";
-            }
-            textMesh.text = frequencies;
-            */
         }
+
+        // Generate Frequency legend
+        SpectrumFreqLegend freqLegend = GameObject.Find("FreqLegend").GetComponent<SpectrumFreqLegend>();
+        freqLegend.SetFreqLegend(this.audioEngine.fftFrequencies, this.edgeLengthOfRaster);
 
         SpectrumDeformer deformer = GameObject.Find("SpectrumMesh").GetComponent<SpectrumDeformer>();
         deformer.MeshGenerated();
