@@ -11,6 +11,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
     private GameObject[] meshObj;
     private MeshFilter[] mFilters;
     private MeshRenderer[] mRenderers;
+    private Collider[] mColliders;
     public Mesh[] meshes;
 
     private Vector3[][] vertices;
@@ -74,6 +75,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
         this.meshObj = new GameObject[this.audioEngine.fftData.Length];
         this.mFilters = new MeshFilter[this.audioEngine.fftData.Length];
         this.mRenderers = new MeshRenderer[this.audioEngine.fftData.Length];
+        this.mColliders = new MeshCollider[this.audioEngine.fftData.Length];
 
         this.meshes = new Mesh[this.audioEngine.fftData.Length];
         this.vertices = new Vector3[this.audioEngine.fftData.Length][];
@@ -91,6 +93,8 @@ public class SpectrumMeshGenerator : MonoBehaviour
 
             this.mRenderers[i] = meshObj[i].AddComponent<MeshRenderer>();
             this.mRenderers[i].material = Resources.Load("Materials/SpectrumMat") as Material;
+
+            this.mColliders[i] = meshObj[i].AddComponent<MeshCollider>();
 
             this.meshes[i] = new Mesh();
             this.meshes[i].Clear();
