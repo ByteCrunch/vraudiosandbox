@@ -6,7 +6,8 @@
     },
     {
       "name": "/actions/default/in/Teleport",
-      "type": "boolean"
+      "type": "boolean",
+      "requirement": "mandatory"
     },
     {
       "name": "/actions/default/in/GrabPinch",
@@ -42,11 +43,13 @@
     },
     {
       "name": "/actions/default/in/PlayStop",
-      "type": "boolean"
+      "type": "boolean",
+      "requirement": "mandatory"
     },
     {
       "name": "/actions/default/in/Rewind",
-      "type": "boolean"
+      "type": "boolean",
+      "requirement": "mandatory"
     },
     {
       "name": "/actions/default/in/ScaleMeshYDec",

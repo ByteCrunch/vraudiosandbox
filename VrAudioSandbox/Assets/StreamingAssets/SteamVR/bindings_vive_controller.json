@@ -197,15 +197,6 @@
                   }
                },
                "mode" : "button",
-               "path" : "/user/hand/right/input/trigger"
-            },
-            {
-               "inputs" : {
-                  "click" : {
-                     "output" : "/actions/default/in/grabpinch"
-                  }
-               },
-               "mode" : "button",
                "parameters" : {
                   "click_activate_threshold" : "0.75",
                   "click_deactivate_threshold" : "0.7"

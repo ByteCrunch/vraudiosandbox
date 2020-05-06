@@ -47,7 +47,7 @@ public class SpectrumDeformer : MonoBehaviour
     /// <param name="point">point for vertices to be affected</param>
     /// <param name="direction">direction of movement</param>
     /// <param name="radius">radius for vertices to be affected</param>
-    public void DeformMesh(Vector3 point, Vector3 direction, float radius)
+    public void DeformMesh(BoxCollider collider, Vector3 direction, float radius)
     {
         for (int j = 0; j < this.modifiedVertices.Length; j++)
         {
@@ -56,7 +56,7 @@ public class SpectrumDeformer : MonoBehaviour
             // only modify vertices corresponding to fft values, omit raster vertices indexes
             for (int i = this.spectrum.startIndexOfPeakVertices; i < this.modifiedVertices[j].Count; i++)
             {
-                var distance = (point - this.modifiedVertices[j][i]).magnitude;
+                var distance = (collider.center - this.modifiedVertices[j][i]).magnitude;
                 if (distance < radius)
                 {
                     // TODO Limit new position according y-scale of mesh, don't allow positions less than 0
@@ -72,17 +72,13 @@ public class SpectrumDeformer : MonoBehaviour
                 Debug.Log("<SpectrumDeformer> mesh #"+ j.ToString() + " modified");
                 this.spectrum.meshes[j].SetVertices(this.modifiedVertices[j]);
                 this.spectrum.SetMeshColors(j);
+
+                // Update position of box collider as well
+                collider.center = collider.center + direction * this.deformFactor;
+
+                // 
             }
         }
-
-        /*for (int j = 0; j < this.modifiedVertices.Length; j++)
-        {
-            for (int i = 0; i < this.modifiedVertices[j].Count; i++)
-            {
-                if (this.modifiedVertices[j][i] != this.origVertices[j][i])
-                    Debug.Log("!= at index " + j.ToString() + ":" + i.ToString());
-            }
-        }*/
     }
 
     void Start()

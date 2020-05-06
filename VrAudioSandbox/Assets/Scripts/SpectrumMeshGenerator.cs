@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Valve.VR.InteractionSystem;
 
 public class SpectrumMeshGenerator : MonoBehaviour
 {
@@ -11,12 +12,13 @@ public class SpectrumMeshGenerator : MonoBehaviour
     private GameObject[] meshObj;
     private MeshFilter[] mFilters;
     private MeshRenderer[] mRenderers;
-    private Collider[] mColliders;
     public Mesh[] meshes;
 
     private Vector3[][] vertices;
     private int[][] triangles;
     private Color32[][] colors;
+
+    private GameObject spectrumColliderGO;
 
     private int countOfRasterVertices;
     public int startIndexOfPeakVertices { get { return this.countOfRasterVertices; } }
@@ -63,6 +65,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
 
     public void Init()
     {
+        this.spectrumColliderGO = GameObject.Find("SpectrumColliders");
         this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
         this.GenerateMeshFromAudioData();
     }
@@ -75,7 +78,6 @@ public class SpectrumMeshGenerator : MonoBehaviour
         this.meshObj = new GameObject[this.audioEngine.fftData.Length];
         this.mFilters = new MeshFilter[this.audioEngine.fftData.Length];
         this.mRenderers = new MeshRenderer[this.audioEngine.fftData.Length];
-        this.mColliders = new MeshCollider[this.audioEngine.fftData.Length];
 
         this.meshes = new Mesh[this.audioEngine.fftData.Length];
         this.vertices = new Vector3[this.audioEngine.fftData.Length][];
@@ -93,8 +95,6 @@ public class SpectrumMeshGenerator : MonoBehaviour
 
             this.mRenderers[i] = meshObj[i].AddComponent<MeshRenderer>();
             this.mRenderers[i].material = Resources.Load("Materials/SpectrumMat") as Material;
-
-            this.mColliders[i] = meshObj[i].AddComponent<MeshCollider>();
 
             this.meshes[i] = new Mesh();
             this.meshes[i].Clear();
@@ -183,8 +183,26 @@ public class SpectrumMeshGenerator : MonoBehaviour
             p.z = center.z + meshIdx * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
 
             this.vertices[meshIdx][this.countOfRasterVertices+i] = p;
+
+            // Spawn box collider for raycasting
+            this.SpawnCollider(meshIdx, i, p);
         }
         this.meshes[meshIdx].vertices = this.vertices[meshIdx];
+    }
+    private void SpawnCollider(int meshIdx, int peakIdx, Vector3 center)
+    {
+        // For every box collider one GameObject is needed
+        GameObject g = new GameObject("SpectrumCollider" + meshIdx.ToString() + "," + peakIdx.ToString());
+        g.transform.parent = this.spectrumColliderGO.transform;
+
+        // Let the teleport script ignore the box collider
+        g.AddComponent<IgnoreTeleportTrace>();
+
+        BoxCollider c = g.AddComponent<BoxCollider>();
+        c.isTrigger = true;
+        c.center = center;
+        c.size = new Vector3(this.edgeLengthOfRaster, this.edgeLengthOfRaster, this.edgeLengthOfRaster);
+        c.name = "SpectrumCollider" + meshIdx.ToString() + "," + peakIdx.ToString();
     }
 
     /// <summary>
