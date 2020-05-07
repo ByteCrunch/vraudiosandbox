@@ -14,7 +14,8 @@ public class AudioEngine : MonoBehaviour
         sine4000Hz,
         sine100Hz,
         test,
-        drumloop
+        drumloop,
+        silence
     }
     public testFiles selectAudioTestFile;
 
@@ -32,6 +33,7 @@ public class AudioEngine : MonoBehaviour
     private NAudio.Wave.WaveStream waveProvider;
     private LoopStream loopStream;
 
+    public bool fftDataEdited;
     private float[] audioData;
     private byte[] playbackBuffer;
     private System.IO.Stream memoryStream;
@@ -58,7 +60,6 @@ public class AudioEngine : MonoBehaviour
     /// </summary>
     void Awake()
     {
-
         this.spectrum = GameObject.Find("SpectrumMesh").GetComponent<SpectrumMeshGenerator>();
 
         if (!Application.isEditor)
@@ -90,6 +91,10 @@ public class AudioEngine : MonoBehaviour
 
                 case testFiles.drumloop:
                     this.filePath = Application.dataPath + "/Resources/Audio/" + "drumloop.wav";
+                    break;
+
+                case testFiles.silence:
+                    this.filePath = Application.dataPath + "/Resources/Audio/" + "silence.wav";
                     break;
             }
             this.LoadAudioData();
@@ -144,8 +149,9 @@ public class AudioEngine : MonoBehaviour
         }
 
         this.DoFft();
+        this.fftDataEdited = true;
         this.spectrum.Init();
-        this.DoIfft();
+        
     }
 
     /// <summary>
@@ -153,7 +159,16 @@ public class AudioEngine : MonoBehaviour
     /// </summary>
     public void Play()
     {
+        // Do IFFT first if there are changes in the spectrum
+        if (this.fftDataEdited)
+        {
+            this.DoIfft();
+            this.fftDataEdited = false;
+
+        }
+
         Debug.Log("<AudioEngine> Play");
+
         if (this.waveOut == null)
         {
             this.waveProvider = new NAudio.Wave.RawSourceWaveStream(
@@ -164,10 +179,8 @@ public class AudioEngine : MonoBehaviour
             this.waveOut.PlaybackStopped += OnPlaybackStopped;
             this.loopStream = new LoopStream(this.waveProvider);
             this.waveOut.Init(this.loopStream);
-            this.waveOut.Play();
-        } else {
-            this.waveOut.Play();
         }
+        this.waveOut.Play();
         this.isPlaying = true;
     }
 

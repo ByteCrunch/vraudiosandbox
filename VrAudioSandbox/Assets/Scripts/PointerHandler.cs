@@ -30,13 +30,8 @@ public class PointerHandler : MonoBehaviour
 
         if (e.target.name.StartsWith("SpectrumCollider"))
         {
-            // TODO For now parse collider object name
-            /*string toParse = e.target.name.Substring(15);
-            string[] split = toParse.Split(',');
-            int i = Int32.Parse(split[0]);
-            int j = Int32.Parse(split[1]);*/
-
-            deformer.DeformMesh(e.target.GetComponent<BoxCollider>(), Vector3.up, 0.01f);
+            //deformer.DeformMesh(e.target.GetComponent<BoxCollider>(), Vector3.up, 0.01f);
+            deformer.DeformMesh(e.target.GetComponent<BoxCollider>(), Vector3.up, 0.01f, 0.8f);
         }
         
     }

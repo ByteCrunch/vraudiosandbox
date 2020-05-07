@@ -500,6 +500,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   edgeLengthOfRaster: 0.006
+  fftScalingFactor: 0.01
   meshes: []
 --- !u!1 &705507993
 GameObject:
@@ -742,8 +743,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9332d6571e535447b7f4c74ba0e83cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectAudioTestFile: 4
+  selectAudioTestFile: 0
   filePath: 
+  fftDataEdited: 0
   importSampleRate: 0
   importBitDepth: 0
   importDurationInMs: 0

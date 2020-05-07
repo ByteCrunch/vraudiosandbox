@@ -6,13 +6,17 @@ using Valve.VR.InteractionSystem;
 public class SpectrumMeshGenerator : MonoBehaviour
 {
     public float edgeLengthOfRaster;
+    public float fftScalingFactor;
 
     private AudioEngine audioEngine;
+    private SpectrumDeformer deformer;
 
     private GameObject[] meshObj;
     private MeshFilter[] mFilters;
     private MeshRenderer[] mRenderers;
     public Mesh[] meshes;
+
+    private float maxPeakValue;
 
     private Vector3[][] vertices;
     private int[][] triangles;
@@ -27,7 +31,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetButtonDown("ScaleMeshYDec"))
+        /*if (Input.GetButtonDown("ScaleMeshYDec"))
         {
             this.ScaleMeshY(-0.05f);
         }
@@ -35,7 +39,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
         if (Input.GetButtonUp("ScaleMeshYInc"))
         {
             this.ScaleMeshY(0.05f);
-        }
+        }*/
 
         // Color meshes according to play position
         if (this.audioEngine.isPlaying)
@@ -67,6 +71,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
     {
         this.spectrumColliderGO = GameObject.Find("SpectrumColliders");
         this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
+        this.deformer = GameObject.Find("SpectrumMesh").GetComponent<SpectrumDeformer>();
         this.GenerateMeshFromAudioData();
     }
 
@@ -99,7 +104,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
             this.meshes[i] = new Mesh();
             this.meshes[i].Clear();
             this.mFilters[i].mesh = this.meshes[i];
-            
+
             // Create Spectrum polygons
             this.SetVertices(i);
             this.SetMeshColors(i);
@@ -117,8 +122,23 @@ public class SpectrumMeshGenerator : MonoBehaviour
         SpectrumFreqLegend freqLegend = GameObject.Find("FreqLegend").GetComponent<SpectrumFreqLegend>();
         freqLegend.SetFreqLegend(this.audioEngine.fftFrequencies, this.edgeLengthOfRaster);
 
-        SpectrumDeformer deformer = GameObject.Find("SpectrumMesh").GetComponent<SpectrumDeformer>();
-        deformer.MeshGenerated();
+        // Init deformer instance
+        this.deformer.MeshGenerated();
+    }
+
+    public void RefreshMesh()
+    {
+        for (int i = 0; i < this.audioEngine.fftData.Length; i++)
+        {
+            this.FindMaxPeakValue(i);
+
+            this.SetVertices(i);
+            this.SetMeshColors(i);
+            this.meshes[i].RecalculateBounds();
+            this.meshes[i].RecalculateNormals();
+            this.meshes[i].OptimizeIndexBuffers();
+            deformer.MeshGenerated();
+        }
     }
 
     /*
@@ -176,10 +196,14 @@ public class SpectrumMeshGenerator : MonoBehaviour
 
         // Add peak vertices
         for (int i = 0; i < this.countOfPeakVertices; i++) {
+
+            float peakValue = (float)this.audioEngine.fftDataMagnitudes[meshIdx][i] * this.fftScalingFactor;
+            // Use this loop to find max value for color lerp
+            this.FindMaxPeakValue(peakValue);
+
             Vector3 p;
             p.x = center.x + i * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
-            p.y = center.y + (float)this.audioEngine.fftDataMagnitudes[meshIdx][i] * 0.01f;
-            //p.y = center.y + (float)this.audioEngine.fftDataPhases[meshIdx][i] * 0.02f;
+            p.y = center.y + peakValue;
             p.z = center.z + meshIdx * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
 
             this.vertices[meshIdx][this.countOfRasterVertices+i] = p;
@@ -217,6 +241,16 @@ public class SpectrumMeshGenerator : MonoBehaviour
     }
 
     /// <summary>
+    /// Find max value for Color lerp
+    /// </summary>
+    /// <returns>maximum of fftData peak values</returns>
+    private void FindMaxPeakValue(float value)
+    {
+        if (value > this.maxPeakValue)
+            this.maxPeakValue = value;
+    }
+
+    /// <summary>
     /// Creates color lerp for mesh peaks
     /// </summary>
     /// <param name="meshIdx">index of mesh to colorize (= index of corresponding FFT chunk)</param>
@@ -224,17 +258,15 @@ public class SpectrumMeshGenerator : MonoBehaviour
     {
         this.colors[meshIdx] = new Color32[this.vertices[meshIdx].Length];
 
-        float max = 0;
         for (int i = 0; i < this.vertices[meshIdx].Length; i++)
-        {
-            if (this.vertices[meshIdx][i].y > max)
-                max = this.vertices[meshIdx][i].y;
-        }
-
-        for (int i = 0; i < this.vertices[meshIdx].Length; i++)
-            this.colors[meshIdx][i] = Color.Lerp(Color.green, Color.red, this.vertices[meshIdx][i].y / max);
+            this.colors[meshIdx][i] = Color.Lerp(Color.green, Color.red, this.vertices[meshIdx][i].y / this.maxPeakValue);
 
         this.meshes[meshIdx].colors32 = this.colors[meshIdx];
+    }
+
+    public void UpdateSingleVertexColor(int meshIdx, int vertex)
+    {
+        this.colors[meshIdx][vertex] = Color.Lerp(Color.green, Color.red, this.vertices[meshIdx][vertex].y / this.maxPeakValue);
     }
 
     /// <summary>
