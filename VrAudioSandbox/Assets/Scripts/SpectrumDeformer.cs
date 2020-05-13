@@ -32,9 +32,6 @@ public class SpectrumDeformer : MonoBehaviour
 
         for (int i=0; i < this.spectrum.meshes.Length; i++)
         {
-            // to get better performance when continually updating the Mesh
-            this.spectrum.meshes[i].MarkDynamic();
-
             //this.origVertices[i] = new List<Vector3>();
             this.modifiedVertices[i] = new List<Vector3>();
 
@@ -72,14 +69,14 @@ public class SpectrumDeformer : MonoBehaviour
                     this.modifiedVertices[j].RemoveAt(i);
                     this.modifiedVertices[j].Insert(i, newVert);
 
-                    // Update Color lerp
-                    this.spectrum.UpdateSingleVertexColor(j, i);
-
                     // Update FFT magnitude data for affected peak vertex
                     this.audioEngine.fftDataMagnitudes[j][i - this.spectrum.startIndexOfPeakVertices] = (double)newVert.y / this.spectrum.fftScalingFactor;
 
-                    changed = true;
+                    // Update Color lerp
+                    this.spectrum.SetMaxPeakValue(newVert.y / this.spectrum.fftScalingFactor);
+                    this.spectrum.UpdateSingleVertexColor(j, i);
 
+                    changed = true;
                 }
             }
 

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using Valve.VR.InteractionSystem;
 
@@ -54,7 +55,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
             }
 
             // workaround until loopstream event will work to trigger reset of spectrum material
-            for (int i = posIdx; i < this.audioEngine.fftData.Length; i++)
+            for (int i = posIdx; i < this.audioEngine.fftDataMagnitudes.Length; i++)
             {
                 this.mRenderers[i].material = Resources.Load("Materials/SpectrumMat") as Material;
             }
@@ -80,16 +81,19 @@ public class SpectrumMeshGenerator : MonoBehaviour
     /// </summary>
     public void GenerateMeshFromAudioData()
     {
-        this.meshObj = new GameObject[this.audioEngine.fftData.Length];
-        this.mFilters = new MeshFilter[this.audioEngine.fftData.Length];
-        this.mRenderers = new MeshRenderer[this.audioEngine.fftData.Length];
+        this.meshObj = new GameObject[this.audioEngine.fftDataMagnitudes.Length];
+        this.mFilters = new MeshFilter[this.audioEngine.fftDataMagnitudes.Length];
+        this.mRenderers = new MeshRenderer[this.audioEngine.fftDataMagnitudes.Length];
 
-        this.meshes = new Mesh[this.audioEngine.fftData.Length];
-        this.vertices = new Vector3[this.audioEngine.fftData.Length][];
-        this.triangles = new int[this.audioEngine.fftData.Length][];
-        this.colors = new Color32[this.audioEngine.fftData.Length][];
+        this.meshes = new Mesh[this.audioEngine.fftDataMagnitudes.Length];
+        this.vertices = new Vector3[this.audioEngine.fftDataMagnitudes.Length][];
+        this.triangles = new int[this.audioEngine.fftDataMagnitudes.Length][];
+        this.colors = new Color32[this.audioEngine.fftDataMagnitudes.Length][];
 
-        for (int i=0; i < this.audioEngine.fftData.Length; i++)
+        Stopwatch timer = Stopwatch.StartNew();
+        this.FindMaxPeakValue();
+
+        for (int i=0; i < this.audioEngine.fftDataMagnitudes.Length; i++)
         {
             // Add GOs, MFs and MRs
             this.meshObj[i] = new GameObject("spectrumMesh" + i.ToString());
@@ -111,12 +115,17 @@ public class SpectrumMeshGenerator : MonoBehaviour
             this.SetTriangles(i);
             this.meshes[i].RecalculateBounds();
             this.meshes[i].RecalculateNormals();
+            this.meshes[i].MarkDynamic(); // to get better performance when continually updating the Mesh
+
 
             // It is important not to call Mesh.Optimize() here, because it will re-order the mesh vertices! 
             // Only Mesh.OptimizeIndexBuffers is uncritical -
             // Mesh.Optimize() will basically also call Mesh.OptimizeReorderVertexBuffer() which will mess up the order and f*ck things up I depend on later.
             this.meshes[i].OptimizeIndexBuffers();
         }
+
+        timer.Stop();
+        UnityEngine.Debug.Log("<SpectrumMeshGenerator> Generated mesh in " + (timer.Elapsed.Seconds + timer.Elapsed.Minutes * 60).ToString() + " seconds.");
 
         // Generate Frequency legend
         SpectrumFreqLegend freqLegend = GameObject.Find("FreqLegend").GetComponent<SpectrumFreqLegend>();
@@ -126,12 +135,10 @@ public class SpectrumMeshGenerator : MonoBehaviour
         this.deformer.MeshGenerated();
     }
 
-    public void RefreshMesh()
+    public void RefreshMeshFromAudioData()
     {
-        for (int i = 0; i < this.audioEngine.fftData.Length; i++)
+        for (int i = 0; i < this.audioEngine.fftDataMagnitudes.Length; i++)
         {
-            this.FindMaxPeakValue(i);
-
             this.SetVertices(i);
             this.SetMeshColors(i);
             this.meshes[i].RecalculateBounds();
@@ -198,18 +205,16 @@ public class SpectrumMeshGenerator : MonoBehaviour
         for (int i = 0; i < this.countOfPeakVertices; i++) {
 
             float peakValue = (float)this.audioEngine.fftDataMagnitudes[meshIdx][i] * this.fftScalingFactor;
-            // Use this loop to find max value for color lerp
-            this.FindMaxPeakValue(peakValue);
 
             Vector3 p;
             p.x = center.x + i * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
             p.y = center.y + peakValue;
             p.z = center.z + meshIdx * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
 
-            this.vertices[meshIdx][this.countOfRasterVertices+i] = p;
-
             // Spawn box collider for raycasting
             this.SpawnCollider(meshIdx, i, p);
+
+            this.vertices[meshIdx][this.countOfRasterVertices+i] = p;
         }
         this.meshes[meshIdx].vertices = this.vertices[meshIdx];
     }
@@ -219,8 +224,9 @@ public class SpectrumMeshGenerator : MonoBehaviour
         GameObject g = new GameObject("SpectrumCollider" + meshIdx.ToString() + "," + peakIdx.ToString());
         g.transform.parent = this.spectrumColliderGO.transform;
 
-        // Let the teleport script ignore the box collider
-        g.AddComponent<IgnoreTeleportTrace>();
+        // Let the teleport script ignore the box collider - 
+        // TODO investigate performance issues
+        // g.AddComponent<IgnoreTeleportTrace>();
 
         BoxCollider c = g.AddComponent<BoxCollider>();
         c.isTrigger = true;
@@ -234,7 +240,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
     /// </summary>
     public void ResetMeshColors()
     {
-        for (int i = 0; i < this.audioEngine.fftData.Length; i++)
+        for (int i = 0; i < this.audioEngine.fftDataMagnitudes.Length; i++)
         {
             this.mRenderers[i].material = Resources.Load("Materials/SpectrumMat") as Material;
         }
@@ -244,7 +250,23 @@ public class SpectrumMeshGenerator : MonoBehaviour
     /// Find max value for Color lerp
     /// </summary>
     /// <returns>maximum of fftData peak values</returns>
-    private void FindMaxPeakValue(float value)
+    private void FindMaxPeakValue()
+    {
+        for (int i = 0; i < this.audioEngine.fftDataMagnitudes.Length; i++)
+        {
+            for (int j = 0; j < this.audioEngine.fftDataMagnitudes[i].Length; j++)
+            {
+                float value = (float)this.audioEngine.fftDataMagnitudes[i][j] * this.fftScalingFactor;
+                if (value > this.maxPeakValue)
+                    this.maxPeakValue = value;
+            }
+        }
+    }
+    /// <summary>
+    /// Check if provided peak value is higher than current peak value and sets accordingly
+    /// </summary>
+    /// <param name="value">peak value to check against</param>
+    public void SetMaxPeakValue(float value)
     {
         if (value > this.maxPeakValue)
             this.maxPeakValue = value;
@@ -267,6 +289,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
     public void UpdateSingleVertexColor(int meshIdx, int vertex)
     {
         this.colors[meshIdx][vertex] = Color.Lerp(Color.green, Color.red, this.vertices[meshIdx][vertex].y / this.maxPeakValue);
+        this.meshes[meshIdx].colors32 = this.colors[meshIdx];
     }
 
     /// <summary>
@@ -307,7 +330,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
     public void ScaleMeshY(float offset)
     {
         Vector3 scale = gameObject.transform.localScale;
-        Debug.Log(scale.ToString());
+        UnityEngine.Debug.Log(scale.ToString());
         gameObject.transform.localScale.Set(scale.x, scale.y + offset, scale.z);
     }
 }
