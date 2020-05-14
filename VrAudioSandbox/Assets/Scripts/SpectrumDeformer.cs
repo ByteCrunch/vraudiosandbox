@@ -13,18 +13,11 @@ public class SpectrumDeformer : MonoBehaviour
     private SpectrumMeshGenerator spectrum;
     private AudioEngine audioEngine;
 
-    public void Init()
-    {
-        
-    }
-
     /// <summary>
     /// Clones the mesh vertices and preparation for deforming mesh
     /// </summary>
     public void MeshGenerated()
     {
-        this.spectrum = GetComponent<SpectrumMeshGenerator>();
-
         //this.origVertices = new List<Vector3>[this.spectrum.meshes.Length]; // TODO use for revert function
         //(removed for performance reasons for now)
 
@@ -48,7 +41,7 @@ public class SpectrumDeformer : MonoBehaviour
     /// <param name="direction">direction of movement</param>
     /// <param name="radius">radius for vertices to be affected</param>
     /// <param name="absoluteOffset">(optional) add given absolute value</param>
-    public void DeformMesh(BoxCollider collider, Vector3 direction, float radius, float absoluteOffset = 0)
+    public void DeformMesh(Vector3 point, Vector3 direction, float radius, float absoluteOffset = 0)
     {
         for (int j = 0; j < this.modifiedVertices.Length; j++)
         {
@@ -56,7 +49,7 @@ public class SpectrumDeformer : MonoBehaviour
             // only modify vertices corresponding to fft values, omit raster vertices indexes
             for (int i = this.spectrum.startIndexOfPeakVertices; i < this.modifiedVertices[j].Count; i++)
             {
-                var distance = (collider.center - this.modifiedVertices[j][i]).magnitude;
+                var distance = (point - this.modifiedVertices[j][i]).magnitude;
                 if (distance < radius)
                 {
                     Vector3 newVert;
@@ -74,7 +67,7 @@ public class SpectrumDeformer : MonoBehaviour
 
                     // Update Color lerp
                     this.spectrum.SetMaxPeakValue(newVert.y / this.spectrum.fftScalingFactor);
-                    this.spectrum.UpdateSingleVertexColor(j, i);
+                    this.spectrum.colors[j][i] = Color.Lerp(Color.green, Color.red, this.spectrum.vertices[j][i].y / this.spectrum.maxPeakValue);
 
                     changed = true;
                 }
@@ -83,19 +76,26 @@ public class SpectrumDeformer : MonoBehaviour
             if (changed)
             {
                 Debug.Log("<SpectrumDeformer> mesh #"+ j.ToString() + " modified");
-                this.spectrum.meshes[j].SetVertices(this.modifiedVertices[j]);
-                this.spectrum.SetMeshColors(j);
 
-                // Update position of box collider
-                collider.center = collider.center + direction * this.deformFactor;
+                // Update mesh
+                this.spectrum.mFilters[j].mesh.Clear(false);
+                this.spectrum.meshes[j].SetVertices(this.modifiedVertices[j]);
+                this.spectrum.SetTriangles(j);
+                this.spectrum.meshes[j].colors32 = this.spectrum.colors[j];
+                this.spectrum.mFilters[j].mesh = this.spectrum.meshes[j];
+
+                // Update mesh collider
+                MeshCollider c = GameObject.Find("FFTData"+j).GetComponent<MeshCollider>();
+                c.sharedMesh = this.spectrum.meshes[j];
 
                 this.audioEngine.fftDataEdited = true;
             }
         }
     }
 
-    void Start()
+    void Awake()
     {
+        this.spectrum = GetComponent<SpectrumMeshGenerator>();
         this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
     }
 

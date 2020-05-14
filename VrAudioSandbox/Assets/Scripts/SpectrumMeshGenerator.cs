@@ -13,22 +13,32 @@ public class SpectrumMeshGenerator : MonoBehaviour
     private SpectrumDeformer deformer;
 
     private GameObject[] meshObj;
-    private MeshFilter[] mFilters;
+    public MeshFilter[] mFilters;
     private MeshRenderer[] mRenderers;
+    private MeshCollider[] mColliders;
     public Mesh[] meshes;
 
-    private float maxPeakValue;
+    public float maxPeakValue;
 
-    private Vector3[][] vertices;
+    public Vector3[][] vertices;
     private int[][] triangles;
-    private Color32[][] colors;
-
-    private GameObject spectrumColliderGO;
+    public Color32[][] colors;
 
     private int countOfRasterVertices;
     public int startIndexOfPeakVertices { get { return this.countOfRasterVertices; } }
 
     private int countOfPeakVertices;
+
+    public void Awake()
+    {
+        this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
+        this.deformer = GameObject.Find("SpectrumMesh").GetComponent<SpectrumDeformer>();
+    }
+
+    private void Start()
+    {
+
+    }
 
     private void Update()
     {
@@ -62,20 +72,6 @@ public class SpectrumMeshGenerator : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-
-    }
-
-
-    public void Init()
-    {
-        this.spectrumColliderGO = GameObject.Find("SpectrumColliders");
-        this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
-        this.deformer = GameObject.Find("SpectrumMesh").GetComponent<SpectrumDeformer>();
-        this.GenerateMeshFromAudioData();
-    }
-
     /// <summary>
     /// Generates Meshes from FFT data
     /// </summary>
@@ -84,6 +80,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
         this.meshObj = new GameObject[this.audioEngine.fftDataMagnitudes.Length];
         this.mFilters = new MeshFilter[this.audioEngine.fftDataMagnitudes.Length];
         this.mRenderers = new MeshRenderer[this.audioEngine.fftDataMagnitudes.Length];
+        this.mColliders = new MeshCollider[this.audioEngine.fftDataMagnitudes.Length];
 
         this.meshes = new Mesh[this.audioEngine.fftDataMagnitudes.Length];
         this.vertices = new Vector3[this.audioEngine.fftDataMagnitudes.Length][];
@@ -106,22 +103,26 @@ public class SpectrumMeshGenerator : MonoBehaviour
             this.mRenderers[i].material = Resources.Load("Materials/SpectrumMat") as Material;
 
             this.meshes[i] = new Mesh();
-            this.meshes[i].Clear();
-            this.mFilters[i].mesh = this.meshes[i];
 
             // Create Spectrum polygons
+            this.meshes[i].MarkDynamic(); // to get better performance when continually updating the Mesh
             this.SetVertices(i);
             this.SetMeshColors(i);
             this.SetTriangles(i);
             this.meshes[i].RecalculateBounds();
             this.meshes[i].RecalculateNormals();
-            this.meshes[i].MarkDynamic(); // to get better performance when continually updating the Mesh
-
 
             // It is important not to call Mesh.Optimize() here, because it will re-order the mesh vertices! 
             // Only Mesh.OptimizeIndexBuffers is uncritical -
             // Mesh.Optimize() will basically also call Mesh.OptimizeReorderVertexBuffer() which will mess up the order and f*ck things up I depend on later.
             this.meshes[i].OptimizeIndexBuffers();
+
+            this.mFilters[i].mesh = this.meshes[i];
+
+            // Add mesh colliders
+            this.mColliders[i] = this.meshObj[i].AddComponent<MeshCollider>();
+            this.mColliders[i].sharedMesh = this.mFilters[i].mesh;
+            this.mColliders[i].cookingOptions = MeshColliderCookingOptions.WeldColocatedVertices;
         }
 
         timer.Stop();
@@ -134,39 +135,6 @@ public class SpectrumMeshGenerator : MonoBehaviour
         // Init deformer instance
         this.deformer.MeshGenerated();
     }
-
-    public void RefreshMeshFromAudioData()
-    {
-        for (int i = 0; i < this.audioEngine.fftDataMagnitudes.Length; i++)
-        {
-            this.SetVertices(i);
-            this.SetMeshColors(i);
-            this.meshes[i].RecalculateBounds();
-            this.meshes[i].RecalculateNormals();
-            this.meshes[i].OptimizeIndexBuffers();
-            deformer.MeshGenerated();
-        }
-    }
-
-    /*
-    // Visualize vertices for Scene view debugging
-    // (huge performance killer for lots of vertices, will freeze unity if used for the whole fft data set)
-    private void OnDrawGizmos()
-    {
-        if (this.audioEngine == null)
-        {
-            return;
-        }
-
-        // Draw Spheres for vertices
-        var transform = this.transform;
-        foreach (var vert in this.meshes[0].vertices)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(transform.TransformPoint(vert), 0.003f);
-        }
-            
-    }*/
 
     /// <summary>
     /// Sets the vertices of ground raster and FFT data peaks
@@ -211,28 +179,9 @@ public class SpectrumMeshGenerator : MonoBehaviour
             p.y = center.y + peakValue;
             p.z = center.z + meshIdx * this.edgeLengthOfRaster + this.edgeLengthOfRaster / 2;
 
-            // Spawn box collider for raycasting
-            this.SpawnCollider(meshIdx, i, p);
-
             this.vertices[meshIdx][this.countOfRasterVertices+i] = p;
         }
         this.meshes[meshIdx].vertices = this.vertices[meshIdx];
-    }
-    private void SpawnCollider(int meshIdx, int peakIdx, Vector3 center)
-    {
-        // For every box collider one GameObject is needed
-        GameObject g = new GameObject("SpectrumCollider" + meshIdx.ToString() + "," + peakIdx.ToString());
-        g.transform.parent = this.spectrumColliderGO.transform;
-
-        // Let the teleport script ignore the box collider - 
-        // TODO investigate performance issues
-        // g.AddComponent<IgnoreTeleportTrace>();
-
-        BoxCollider c = g.AddComponent<BoxCollider>();
-        c.isTrigger = true;
-        c.center = center;
-        c.size = new Vector3(this.edgeLengthOfRaster, this.edgeLengthOfRaster, this.edgeLengthOfRaster);
-        c.name = "SpectrumCollider" + meshIdx.ToString() + "," + peakIdx.ToString();
     }
 
     /// <summary>
@@ -286,17 +235,11 @@ public class SpectrumMeshGenerator : MonoBehaviour
         this.meshes[meshIdx].colors32 = this.colors[meshIdx];
     }
 
-    public void UpdateSingleVertexColor(int meshIdx, int vertex)
-    {
-        this.colors[meshIdx][vertex] = Color.Lerp(Color.green, Color.red, this.vertices[meshIdx][vertex].y / this.maxPeakValue);
-        this.meshes[meshIdx].colors32 = this.colors[meshIdx];
-    }
-
     /// <summary>
     /// Creates triangles for the chosen mesh
     /// </summary>
     /// <param name="meshIdx">index of mesh to create triangles for (= index of corresponding FFT chunk)</param>
-    private void SetTriangles(int meshIdx)
+    public void SetTriangles(int meshIdx)
     {
         // 4 pyramid sides per fft bin (without base), 3 vertices indices per side
         this.triangles[meshIdx] = new int[this.audioEngine.fftBinCount * 4 * 3]; 
@@ -333,4 +276,24 @@ public class SpectrumMeshGenerator : MonoBehaviour
         UnityEngine.Debug.Log(scale.ToString());
         gameObject.transform.localScale.Set(scale.x, scale.y + offset, scale.z);
     }
+
+    /*
+    // Visualize vertices for Scene view debugging
+    // (huge performance killer for lots of vertices, will freeze unity if used for the whole fft data set)
+    private void OnDrawGizmos()
+    {
+        if (this.audioEngine == null)
+        {
+            return;
+        }
+
+        // Draw Spheres for vertices
+        var transform = this.transform;
+        foreach (var vert in this.meshes[0].vertices)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(transform.TransformPoint(vert), 0.003f);
+        }
+
+    }*/
 }
