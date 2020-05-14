@@ -28,11 +28,18 @@ public class PointerHandler : MonoBehaviour
     {
         Debug.Log("Click! " + e.target.name.ToString());
 
-        if (e.target.name.StartsWith("SpectrumCollider"))
+        if (e.target.name.StartsWith("FFTData"))
         {
-            //deformer.DeformMesh(e.target.GetComponent<BoxCollider>(), Vector3.up, 0.01f);
-            deformer.DeformMesh(e.target.GetComponent<BoxCollider>(), Vector3.up, 0.1f, 0.8f);
+            //deformer.DeformMesh(e.point, Vector3.up, 0.01f);
+            deformer.DeformMesh(e.point, Vector3.up, 0.1f, 0.8f);
+
+            return;
         }
         
+        if (e.target.name.StartsWith("UI"))
+        {
+
+            return;
+        }
     }
 }

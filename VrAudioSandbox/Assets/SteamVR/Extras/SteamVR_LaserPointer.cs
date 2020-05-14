@@ -136,6 +136,7 @@ namespace Valve.VR.Extras
             {
                 PointerEventArgs argsClick = new PointerEventArgs();
                 argsClick.fromInputSource = pose.inputSource;
+                argsClick.point = hit.point;
                 argsClick.distance = hit.distance;
                 argsClick.flags = 0;
                 argsClick.target = hit.transform;
@@ -160,6 +161,7 @@ namespace Valve.VR.Extras
     {
         public SteamVR_Input_Sources fromInputSource;
         public uint flags;
+        public Vector3 point;
         public float distance;
         public Transform target;
     }

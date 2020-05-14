@@ -150,7 +150,7 @@ public class AudioEngine : MonoBehaviour
 
         this.DoFft();
         this.fftDataEdited = true;
-        this.spectrum.Init();
+        this.spectrum.GenerateMeshFromAudioData();
         
     }
 
