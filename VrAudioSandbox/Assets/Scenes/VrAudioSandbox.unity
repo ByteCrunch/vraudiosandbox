@@ -606,6 +606,9 @@ MonoBehaviour:
   ScaleMeshYInc:
     actionPath: /actions/default/in/ScaleMeshYInc
     needsReinit: 0
+  hold:
+    actionPath: /actions/default/in/Hold
+    needsReinit: 0
   handType: 2
 --- !u!4 &544046224
 Transform:
@@ -696,7 +699,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   edgeLengthOfRaster: 0.006
   fftScalingFactor: 0.01
+  mFilters: []
   meshes: []
+  maxPeakValue: 0
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -938,7 +943,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9332d6571e535447b7f4c74ba0e83cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectAudioTestFile: 3
+  selectAudioTestFile: 4
   filePath: 
   fftDataEdited: 0
   importSampleRate: 0

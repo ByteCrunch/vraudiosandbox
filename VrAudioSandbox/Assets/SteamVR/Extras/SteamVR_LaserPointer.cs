@@ -117,6 +117,7 @@ namespace Valve.VR.Extras
             {
                 PointerEventArgs argsIn = new PointerEventArgs();
                 argsIn.fromInputSource = pose.inputSource;
+                argsIn.point = hit.point;
                 argsIn.distance = hit.distance;
                 argsIn.flags = 0;
                 argsIn.target = hit.transform;
