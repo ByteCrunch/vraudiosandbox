@@ -1,13 +1,16 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 
 [RequireComponent(typeof(SpectrumMeshGenerator))]
 public class SpectrumDeformer : MonoBehaviour
 {
-    //public List<Vector3>[] origVertices; // for storing a copy of unmodified values
-    public List<Vector3>[] modifiedVertices;
-    public List<DeformJob> jobQueue;
+    public Vector3[][] modifiedVertices;
+    public List<DeformJob> routineQueue;
 
     public float deformFactor;
 
@@ -19,18 +22,12 @@ public class SpectrumDeformer : MonoBehaviour
     /// </summary>
     public void MeshGenerated()
     {
-        //this.origVertices = new List<Vector3>[this.spectrum.meshes.Length]; // TODO use for revert function
-        //(removed for performance reasons for now)
-
-        this.modifiedVertices = new List<Vector3>[this.spectrum.meshes.Length];
+        this.modifiedVertices = new Vector3[this.spectrum.meshes.Length][];
 
         for (int i=0; i < this.spectrum.meshes.Length; i++)
         {
-            //this.origVertices[i] = new List<Vector3>();
-            this.modifiedVertices[i] = new List<Vector3>();
-
-            //this.spectrum.meshes[i].GetVertices(this.origVertices[i]);
-            this.spectrum.meshes[i].GetVertices(this.modifiedVertices[i]);
+            this.modifiedVertices[i] = new Vector3[this.audioEngine.fftBinCount];
+            this.modifiedVertices[i] = this.spectrum.meshes[i].vertices;
         }
 
     }
@@ -38,12 +35,12 @@ public class SpectrumDeformer : MonoBehaviour
     {
         List<Vector3> points = new List<Vector3>();
         points.Add(point);
-        this.jobQueue.Add(new DeformJob(points, direction, radius, absoluteOffset));
+        this.routineQueue.Add(new DeformJob(points, direction, radius, absoluteOffset));
     }
 
     public void DeformMeshMultiplePoints(List<Vector3> points, Vector3 direction, float radius, float absoluteOffset = 0)
     {
-        this.jobQueue.Add(new DeformJob(points, direction, radius, absoluteOffset));
+        this.routineQueue.Add(new DeformJob(points, direction, radius, absoluteOffset));
     }
 
     /// <summary>
@@ -53,74 +50,68 @@ public class SpectrumDeformer : MonoBehaviour
     /// <param name="direction">direction of movement</param>
     /// <param name="radius">radius for vertices to be affected</param>
     /// <param name="absoluteOffset">(optional) add given absolute value</param>
-    private IEnumerator DeformMeshMultiplePointsWorker(DeformJob job, List<Vector3> points, Vector3 direction, float radius, float absoluteOffset = 0)
+    private IEnumerator DeformMeshMultiplePointsWorker(DeformJob routine, List<Vector3> points, Vector3 direction, float radius, float absoluteOffset = 0)
     {
+        routine.isRunning = true;
+
         // Collect all changes to be made first
-        Dictionary<int, List<VertexChange>> collectedChanges = new Dictionary<int, List<VertexChange>>();
-        for (int p = 0; p < points.Count; p++)
-        {
-            for (int j = 0; j < this.modifiedVertices.Length; j++)
-            {
-                // only modify vertices corresponding to fft values, omit raster vertices indexes
-                for (int i = this.spectrum.startIndexOfPeakVertices; i < this.modifiedVertices[j].Count; i++)
-                {
-                    var distance = (points[p] - this.modifiedVertices[j][i]).magnitude;
-                    if (distance < radius)
-                    {
-                        Vector3 newVert;
-                        // TODO Limit new position according y-scale of mesh, don't allow positions less than 0
-                        if (absoluteOffset == 0)
-                            newVert = this.modifiedVertices[j][i] + direction * this.deformFactor;
-                        else
-                            newVert = new Vector3(this.modifiedVertices[j][i].x, this.modifiedVertices[j][i].y + absoluteOffset, this.modifiedVertices[j][i].z);
+        NativeArray<Vector3>[] vertices = new NativeArray<Vector3>[this.modifiedVertices.Length];
+        NativeQueue<VertexChange> vertexChanges = new NativeQueue<VertexChange>(Allocator.Persistent);
+        FindPointsToUpdateJob[] jobData = new FindPointsToUpdateJob[this.modifiedVertices.Length];
+        JobHandle[] jobHandles = new JobHandle[this.modifiedVertices.Length];
 
-                        if (!collectedChanges.ContainsKey(j))
-                            collectedChanges.Add(j, new List<VertexChange>() { new VertexChange(i, newVert) });
-                        else 
-                            collectedChanges[j].Add(new VertexChange(i, newVert));
-                    }
-                }
-            }       
+        for (int j = 0; j < this.modifiedVertices.Length; j++)
+        {
+            if (j > 0)
+                jobHandles[j - 1].Complete(); //Ensure that previous job is complete before preparing next one to prevent access on the NativeQueue while previous job is writing
+
+            // only modify vertices corresponding to fft values, omit raster vertices indexes
+            Vector3[] peakVertices = new Vector3[this.modifiedVertices[j].Length - this.spectrum.startIndexOfPeakVertices];
+            Array.Copy(this.modifiedVertices[j], this.spectrum.startIndexOfPeakVertices, peakVertices, 0, peakVertices.Length);
+            vertices[j] = new NativeArray<Vector3>(peakVertices, Allocator.TempJob);
+
+            jobData[j] = new FindPointsToUpdateJob();
+            jobData[j].meshIdx = j;
+            jobData[j].vertices = vertices[j];
+            jobData[j].points = new NativeArray<Vector3>(points.ToArray(), Allocator.TempJob);
+            jobData[j].direction = direction;
+            jobData[j].deformFactor = this.deformFactor;
+            jobData[j].absoluteOffset = absoluteOffset;
+            jobData[j].radius = radius;
+            jobData[j].vertexChanges = vertexChanges.AsParallelWriter();
+
+            if (j < 1)
+                jobHandles[j] = jobData[j].Schedule(peakVertices.Length, 256);
+            else
+                jobHandles[j] = jobData[j].Schedule(peakVertices.Length, 256, jobHandles[j-1]);
         }
 
-        yield return null;
+        // wait for last job
+        jobHandles[this.modifiedVertices.Length-1].Complete();
 
-        // Process consolidated vertex changes
-        foreach (KeyValuePair<int, List<VertexChange>> changeList in collectedChanges)
+        int rounds = 0;
+        // Update meshes, colliders & fftDataMagnitudes
+        while (vertexChanges.TryDequeue(out VertexChange vc))
         {
-            foreach (VertexChange v in changeList.Value)
-            {
-                this.modifiedVertices[changeList.Key].RemoveAt(v.index);
-                this.modifiedVertices[changeList.Key].Insert(v.index, v.newVert);
-            }
+            this.modifiedVertices[vc.meshIdx][vc.vertexIdx + this.spectrum.startIndexOfPeakVertices] = new Vector3(vc.x, vc.y, vc.z);
+            this.spectrum.mFilters[vc.meshIdx].mesh.vertices = this.modifiedVertices[vc.meshIdx];
+
+            if (rounds % 32 == 0)
+                yield return null;
+
+            // Update colliders
+            MeshCollider c = GameObject.Find("FFTData" + vc.meshIdx.ToString()).GetComponent<MeshCollider>();
+            c.sharedMesh = this.spectrum.mFilters[vc.meshIdx].mesh;
+
+            // Update fft Data
+            this.audioEngine.fftDataMagnitudes[vc.meshIdx][vc.vertexIdx] = (double)vc.y / this.spectrum.fftScalingFactor;
+
+            rounds++;
         }
-
-        yield return null;
-
-        // Update meshes & colliders
-        foreach (KeyValuePair<int, List<VertexChange>> changeList in collectedChanges)
-        {
-            this.spectrum.meshes[changeList.Key].SetVertices(this.modifiedVertices[changeList.Key]);
-            this.spectrum.mFilters[changeList.Key].mesh = this.spectrum.meshes[changeList.Key];
-
-            MeshCollider c = GameObject.Find("FFTData" + changeList.Key).GetComponent<MeshCollider>();
-            c.sharedMesh = this.spectrum.meshes[changeList.Key];
-        }
-
-        yield return null;
-
-        // Process fft data changes
-        foreach (KeyValuePair<int, List<VertexChange>> changeList in collectedChanges)
-        {
-            foreach (VertexChange v in changeList.Value)
-            {
-                // Update FFT magnitude data for affected peak vertex
-                this.audioEngine.fftDataMagnitudes[changeList.Key][v.index - this.spectrum.startIndexOfPeakVertices] = (double)v.newVert.y / this.spectrum.fftScalingFactor;
-            }
-        }
+        vertexChanges.Dispose();
 
         this.audioEngine.fftDataEdited = true;
-        job.isFinished = true;
+        routine.isFinished = true;
     }
 
     void Awake()
@@ -128,17 +119,17 @@ public class SpectrumDeformer : MonoBehaviour
         this.spectrum = GetComponent<SpectrumMeshGenerator>();
         this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
 
-        this.jobQueue = new List<DeformJob>();
+        this.routineQueue = new List<DeformJob>();
     }
 
     void Update()
     {
-        for (int i = 0; i < this.jobQueue.Count; i++)
+        for (int i = 0; i < this.routineQueue.Count; i++)
         {
-            if (!this.jobQueue[i].isFinished)
-                StartCoroutine(this.DeformMeshMultiplePointsWorker(this.jobQueue[i], this.jobQueue[i].points, this.jobQueue[i].direction, this.jobQueue[i].radius, this.jobQueue[i].absoluteOffset));
+            if (!this.routineQueue[i].isFinished && !this.routineQueue[i].isRunning)
+                StartCoroutine(this.DeformMeshMultiplePointsWorker(this.routineQueue[i], this.routineQueue[i].points, this.routineQueue[i].direction, this.routineQueue[i].radius, this.routineQueue[i].absoluteOffset));
             else
-                this.jobQueue.RemoveAt(i);
+                this.routineQueue.RemoveAt(i);
         }
     }
 }
@@ -151,6 +142,7 @@ public class DeformJob
     public float absoluteOffset = 0;
 
     public bool isFinished = false;
+    public bool isRunning = false;
 
     public DeformJob(List<Vector3> points, Vector3 direction, float radius, float absoluteOffset = 0)
     {
@@ -161,14 +153,48 @@ public class DeformJob
     }
 }
 
-public class VertexChange
+public struct VertexChange
 {
-    public int index;
-    public Vector3 newVert;
+    public int meshIdx;
+    public int vertexIdx;
+    public float x;
+    public float y;
+    public float z;
 
-    public VertexChange(int index, Vector3 newVert)
+    public VertexChange(int meshIdx, int vertexIdx, float x, float y, float z)
     {
-        this.index = index;
-        this.newVert = newVert;
+        this.meshIdx = meshIdx;
+        this.vertexIdx = vertexIdx;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+}
+
+[BurstCompile]
+public struct FindPointsToUpdateJob : IJobParallelFor
+{
+    [ReadOnly] public int meshIdx;
+    [DeallocateOnJobCompletion] [ReadOnly] public NativeArray<Vector3> vertices;
+    [DeallocateOnJobCompletion] [ReadOnly] public NativeArray<Vector3> points;
+    [ReadOnly] public Vector3 direction;
+    [ReadOnly] public float deformFactor;
+    [ReadOnly] public float absoluteOffset;
+    [ReadOnly] public float radius;
+    public NativeQueue<VertexChange>.ParallelWriter vertexChanges;
+    public void Execute(int i)
+    {
+        for (int p = 0; p < points.Length; p++)
+        {
+            var distance = (points[p] - vertices[i]).magnitude;
+            if (distance < radius)
+            {
+                // TODO Limit new position according y-scale of mesh, don't allow positions less than 0
+                if (absoluteOffset == 0)
+                    vertexChanges.Enqueue(new VertexChange(meshIdx, i, vertices[i].x + direction.x * deformFactor, vertices[i].y + direction.y * deformFactor, vertices[i].z + direction.z * deformFactor));
+                else
+                    vertexChanges.Enqueue(new VertexChange(meshIdx, i, vertices[i].x, vertices[i].y + absoluteOffset, vertices[i].z));
+            }
+        }
     }
 }
