@@ -89,14 +89,14 @@ public class SpectrumDeformer : MonoBehaviour
         // wait for last job
         jobHandles[this.modifiedVertices.Length-1].Complete();
 
-        int rounds = 0;
+        int frames = 0;
         // Update meshes, colliders & fftDataMagnitudes
         while (vertexChanges.TryDequeue(out VertexChange vc))
         {
             this.modifiedVertices[vc.meshIdx][vc.vertexIdx + this.spectrum.startIndexOfPeakVertices] = new Vector3(vc.x, vc.y, vc.z);
             this.spectrum.mFilters[vc.meshIdx].mesh.vertices = this.modifiedVertices[vc.meshIdx];
 
-            if (rounds % 32 == 0)
+            if (frames % 30 == 0)
                 yield return null;
 
             // Update colliders
@@ -106,11 +106,13 @@ public class SpectrumDeformer : MonoBehaviour
             // Update fft Data
             this.audioEngine.fftDataMagnitudes[vc.meshIdx][vc.vertexIdx] = (double)vc.y / this.spectrum.fftScalingFactor;
 
-            rounds++;
+            frames++;
         }
+
         vertexChanges.Dispose();
 
         this.audioEngine.fftDataEdited = true;
+
         routine.isFinished = true;
     }
 
