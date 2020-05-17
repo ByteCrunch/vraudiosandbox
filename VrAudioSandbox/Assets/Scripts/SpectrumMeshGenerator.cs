@@ -274,7 +274,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
     {
         Vector3 scale = gameObject.transform.localScale;
         UnityEngine.Debug.Log(scale.ToString());
-        gameObject.transform.localScale.Set(scale.x, scale.y + offset, scale.z);
+        GameObject.Find("Spectrum").transform.localScale.Set(scale.x, scale.y + offset, scale.z);
     }
 
     /*
