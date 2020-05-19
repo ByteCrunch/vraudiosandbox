@@ -54,7 +54,7 @@ public class SpectrumDeformer : MonoBehaviour
     {
         routine.isRunning = true;
 
-        // Collect all changes to be made first
+        // Collect all changes to be made
         NativeArray<Vector3>[] vertices = new NativeArray<Vector3>[this.modifiedVertices.Length];
         NativeQueue<VertexChange> vertexChanges = new NativeQueue<VertexChange>(Allocator.Persistent);
         FindPointsToUpdateJob[] jobData = new FindPointsToUpdateJob[this.modifiedVertices.Length];
@@ -93,11 +93,16 @@ public class SpectrumDeformer : MonoBehaviour
         // Update meshes, colliders & fftDataMagnitudes
         while (vertexChanges.TryDequeue(out VertexChange vc))
         {
+            // Update vertices
             this.modifiedVertices[vc.meshIdx][vc.vertexIdx + this.spectrum.startIndexOfPeakVertices] = new Vector3(vc.x, vc.y, vc.z);
             this.spectrum.mFilters[vc.meshIdx].mesh.vertices = this.modifiedVertices[vc.meshIdx];
 
             if (frames % 30 == 0)
                 yield return null;
+
+            // Update color
+            Color32 color = Color.Lerp(Color.green, Color.red, this.spectrum.mFilters[vc.meshIdx].mesh.vertices[vc.vertexIdx].y / this.spectrum.maxPeakValue);
+            this.spectrum.mFilters[vc.meshIdx].mesh.colors[vc.vertexIdx] = color;
 
             // Update colliders
             MeshCollider c = GameObject.Find("FFTData" + vc.meshIdx.ToString()).GetComponent<MeshCollider>();
