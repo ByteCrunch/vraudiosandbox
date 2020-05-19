@@ -24,7 +24,7 @@ public class SpectrumDeformer : MonoBehaviour
     {
         this.modifiedVertices = new Vector3[this.spectrum.meshes.Length][];
 
-        for (int i=0; i < this.spectrum.meshes.Length; i++)
+        for (int i = 0; i < this.spectrum.meshes.Length; i++)
         {
             this.modifiedVertices[i] = new Vector3[this.audioEngine.fftBinCount];
             this.modifiedVertices[i] = this.spectrum.meshes[i].vertices;
@@ -53,6 +53,27 @@ public class SpectrumDeformer : MonoBehaviour
     private IEnumerator DeformMeshMultiplePointsWorker(DeformJob routine, List<Vector3> points, Vector3 direction, float radius, float absoluteOffset = 0)
     {
         routine.isRunning = true;
+        int frames = 0;
+
+        // Interpolate additional points if there are gaps
+        int i = 0;
+        while (i < points.Count - 1)
+        {
+            float distance = (points[i] - points[i + 1]).magnitude;
+            if (distance > radius)
+            {
+                int n = (int)(distance / radius);
+                for (int j = 1; j <= n; j++)
+                {
+                    points.Insert(i, Vector3.Lerp(points[i], points[i + 1], (float)1 / n * j));
+                    i++;
+                }
+            }
+            i++;
+
+            if (frames % 30 == 0)
+                yield return null;
+        }
 
         // Collect all changes to be made
         NativeArray<Vector3>[] vertices = new NativeArray<Vector3>[this.modifiedVertices.Length];
@@ -83,13 +104,12 @@ public class SpectrumDeformer : MonoBehaviour
             if (j < 1)
                 jobHandles[j] = jobData[j].Schedule(peakVertices.Length, 256);
             else
-                jobHandles[j] = jobData[j].Schedule(peakVertices.Length, 256, jobHandles[j-1]);
+                jobHandles[j] = jobData[j].Schedule(peakVertices.Length, 256, jobHandles[j - 1]);
         }
 
         // wait for last job
-        jobHandles[this.modifiedVertices.Length-1].Complete();
+        jobHandles[this.modifiedVertices.Length - 1].Complete();
 
-        int frames = 0;
         // Update meshes, colliders & fftDataMagnitudes
         while (vertexChanges.TryDequeue(out VertexChange vc))
         {
@@ -140,7 +160,6 @@ public class SpectrumDeformer : MonoBehaviour
         }
     }
 }
-
 public class DeformJob
 {
     public List<Vector3> points;

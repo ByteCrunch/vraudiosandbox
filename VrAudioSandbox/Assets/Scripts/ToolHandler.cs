@@ -16,6 +16,7 @@ public class ToolHandler : MonoBehaviour
     private bool triggerDown;
     private ToolType selectedTool;
     private List<Vector3> pointsToDraw;
+    private LineRenderer lr;
     
     public ToolType SelectedTool { get => selectedTool; set => selectedTool = value; }
     public bool TriggerDown { get => triggerDown; set => triggerDown = value; }
@@ -34,6 +35,8 @@ public class ToolHandler : MonoBehaviour
     {
         laserPointer.PointerClick += this.PointerClick;
         laserPointer.PointerIn += this.PointerIn;
+
+        this.lr = GetComponent<LineRenderer>();
 
         this.selectedTool = ToolType.SpectrumPainterAddOffset;
 
@@ -68,6 +71,12 @@ public class ToolHandler : MonoBehaviour
         if (this.selectedTool == ToolType.SpectrumPainterAddOffset && this.triggerDown && e.target.name.StartsWith("FFTData"))
         {
             this.pointsToDraw.Add(e.point);
+
+            // Visualize trail
+            this.lr.enabled = true;
+            this.lr.positionCount = this.pointsToDraw.Count;
+            this.lr.SetPositions(this.pointsToDraw.ToArray());
+
             return;
         }
     }
@@ -83,6 +92,9 @@ public class ToolHandler : MonoBehaviour
                 deformer.DeformMeshMultiplePoints(this.pointsToDraw, Vector3.up, 0.01f, 0.8f);
             else if (this.selectedTool == ToolType.SpectrumPainterSubOffset)
                 deformer.DeformMeshMultiplePoints(this.pointsToDraw, Vector3.down, 0.01f, 0.8f);
+
+            this.lr.positionCount = 0;
+            this.lr.enabled = false;
 
             this.pointsToDraw.Clear();
         }
