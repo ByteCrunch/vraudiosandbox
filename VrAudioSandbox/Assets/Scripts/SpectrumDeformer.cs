@@ -54,7 +54,6 @@ public class SpectrumDeformer : MonoBehaviour
     {
         routine.isRunning = true;
         int frames = 0;
-
         // Interpolate additional points if there are gaps
         int i = 0;
         while (i < points.Count - 1)
@@ -120,9 +119,10 @@ public class SpectrumDeformer : MonoBehaviour
             if (frames % 30 == 0)
                 yield return null;
 
-            // Update color
-            Color32 color = Color.Lerp(Color.green, Color.red, this.spectrum.mFilters[vc.meshIdx].mesh.vertices[vc.vertexIdx].y / this.spectrum.maxPeakValue);
-            this.spectrum.mFilters[vc.meshIdx].mesh.colors[vc.vertexIdx] = color;
+            // Update color //TODO fix colors
+            this.spectrum.SetMaxPeakValue(this.spectrum.mFilters[vc.meshIdx].mesh.vertices[vc.vertexIdx].y);
+            this.spectrum.colors[vc.meshIdx][vc.vertexIdx] = Color.Lerp(Color.green, Color.red, this.modifiedVertices[vc.meshIdx][vc.vertexIdx + this.spectrum.startIndexOfPeakVertices].y / this.spectrum.maxPeakValue);
+            this.spectrum.mFilters[vc.meshIdx].mesh.SetColors(this.spectrum.colors[vc.meshIdx]);
 
             // Update colliders
             MeshCollider c = GameObject.Find("FFTData" + vc.meshIdx.ToString()).GetComponent<MeshCollider>();
