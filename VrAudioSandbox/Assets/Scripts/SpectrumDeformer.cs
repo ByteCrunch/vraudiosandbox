@@ -31,16 +31,16 @@ public class SpectrumDeformer : MonoBehaviour
         }
 
     }
-    public void DeformMeshPoint(Vector3 point, Vector3 direction, float radius, float absoluteOffset = 0)
+    public void DeformMeshPoint(Vector3 point, Vector3 direction, float radius, float absoluteValue = -1)
     {
         List<Vector3> points = new List<Vector3>();
         points.Add(point);
-        this.routineQueue.Add(new DeformJob(points, direction, radius, absoluteOffset));
+        this.routineQueue.Add(new DeformJob(points, direction, radius, absoluteValue));
     }
 
-    public void DeformMeshMultiplePoints(List<Vector3> points, Vector3 direction, float radius, float absoluteOffset = 0)
+    public void DeformMeshMultiplePoints(List<Vector3> points, Vector3 direction, float radius, float absoluteValue = -1)
     {
-        this.routineQueue.Add(new DeformJob(points, direction, radius, absoluteOffset));
+        this.routineQueue.Add(new DeformJob(points, direction, radius, absoluteValue));
     }
 
     /// <summary>
@@ -49,8 +49,8 @@ public class SpectrumDeformer : MonoBehaviour
     /// <param name="point">point for vertices to be affected</param>
     /// <param name="direction">direction of movement</param>
     /// <param name="radius">radius for vertices to be affected</param>
-    /// <param name="absoluteOffset">(optional) add given absolute value</param>
-    private IEnumerator DeformMeshMultiplePointsWorker(DeformJob routine, List<Vector3> points, Vector3 direction, float radius, float absoluteOffset = 0)
+    /// <param name="absoluteValue">(optional) add given absolute value</param>
+    private IEnumerator DeformMeshMultiplePointsWorker(DeformJob routine, List<Vector3> points, Vector3 direction, float radius, float absoluteValue)
     {
         routine.isRunning = true;
         int frames = 0;
@@ -70,7 +70,7 @@ public class SpectrumDeformer : MonoBehaviour
             }
             i++;
 
-            if (frames % 30 == 0)
+            if (frames % 20 == 0)
                 yield return null;
         }
 
@@ -96,7 +96,7 @@ public class SpectrumDeformer : MonoBehaviour
             jobData[j].points = new NativeArray<Vector3>(points.ToArray(), Allocator.TempJob);
             jobData[j].direction = direction;
             jobData[j].deformFactor = this.deformFactor;
-            jobData[j].absoluteOffset = absoluteOffset;
+            jobData[j].absoluteValue = absoluteValue;
             jobData[j].radius = radius;
             jobData[j].vertexChanges = vertexChanges.AsParallelWriter();
 
@@ -154,7 +154,7 @@ public class SpectrumDeformer : MonoBehaviour
         for (int i = 0; i < this.routineQueue.Count; i++)
         {
             if (!this.routineQueue[i].isFinished && !this.routineQueue[i].isRunning)
-                StartCoroutine(this.DeformMeshMultiplePointsWorker(this.routineQueue[i], this.routineQueue[i].points, this.routineQueue[i].direction, this.routineQueue[i].radius, this.routineQueue[i].absoluteOffset));
+                StartCoroutine(this.DeformMeshMultiplePointsWorker(this.routineQueue[i], this.routineQueue[i].points, this.routineQueue[i].direction, this.routineQueue[i].radius, this.routineQueue[i].absoluteValue));
             else
                 this.routineQueue.RemoveAt(i);
         }
@@ -165,17 +165,17 @@ public class DeformJob
     public List<Vector3> points;
     public Vector3 direction;
     public float radius;
-    public float absoluteOffset = 0;
+    public float absoluteValue = 0;
 
     public bool isFinished = false;
     public bool isRunning = false;
 
-    public DeformJob(List<Vector3> points, Vector3 direction, float radius, float absoluteOffset = 0)
+    public DeformJob(List<Vector3> points, Vector3 direction, float radius, float absoluteValue)
     {
         this.points = new List<Vector3>(points);
         this.direction = direction;
         this.radius = radius;
-        this.absoluteOffset = absoluteOffset;
+        this.absoluteValue = absoluteValue;
     }
 }
 
@@ -205,21 +205,24 @@ public struct FindPointsToUpdateJob : IJobParallelFor
     [DeallocateOnJobCompletion] [ReadOnly] public NativeArray<Vector3> points;
     [ReadOnly] public Vector3 direction;
     [ReadOnly] public float deformFactor;
-    [ReadOnly] public float absoluteOffset;
+    [ReadOnly] public float absoluteValue;
     [ReadOnly] public float radius;
     public NativeQueue<VertexChange>.ParallelWriter vertexChanges;
     public void Execute(int i)
     {
         for (int p = 0; p < points.Length; p++)
         {
-            var distance = (points[p] - vertices[i]).magnitude;
+            // Ignore y-axis when determing points to be affected
+            var distance = (new Vector3(points[p].x, 0, points[p].z) - new Vector3(vertices[i].x, 0, vertices[i].z)).magnitude;
             if (distance < radius)
             {
                 // TODO Limit new position according y-scale of mesh, don't allow positions less than 0
-                if (absoluteOffset == 0)
+                if (absoluteValue == -1)
+                    // use factor for changing of y-value
                     vertexChanges.Enqueue(new VertexChange(meshIdx, i, vertices[i].x + direction.x * deformFactor, vertices[i].y + direction.y * deformFactor, vertices[i].z + direction.z * deformFactor));
                 else
-                    vertexChanges.Enqueue(new VertexChange(meshIdx, i, vertices[i].x, vertices[i].y + absoluteOffset, vertices[i].z));
+                    // use absolute value
+                    vertexChanges.Enqueue(new VertexChange(meshIdx, i, vertices[i].x, absoluteValue, vertices[i].z));
             }
         }
     }
