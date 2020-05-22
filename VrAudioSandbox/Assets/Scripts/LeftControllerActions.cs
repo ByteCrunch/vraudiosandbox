@@ -11,6 +11,9 @@ public class LeftControllerActions : MonoBehaviour
     private float xRotation;
 
     public bool LeftMenuActive = false;
+    private Vector3 UIworldPos;
+    private Vector3 UIlocalPos;
+    private Quaternion UIlocalRotation;
 
     private AudioEngine audioEngine;
     private SpectrumMeshGenerator spectrum;
@@ -43,8 +46,12 @@ public class LeftControllerActions : MonoBehaviour
         this.LeftMenuActive = true;
         this.ui.SetActive(true);
 
-        // Freeze position
-        this.ui.transform.SetParent(GameObject.Find("Environment").transform);
+        this.UIworldPos = this.ui.transform.position;
+        this.UIlocalPos = this.ui.transform.localPosition;
+        this.UIlocalRotation = this.ui.transform.localRotation;
+
+        this.ui.transform.SetParent(null, true);
+        this.ui.transform.position = this.UIworldPos;
     }
 
     private void LeftMenuDeactivate(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -52,6 +59,8 @@ public class LeftControllerActions : MonoBehaviour
         this.LeftMenuActive = false;
         this.ui.SetActive(false);
         this.ui.transform.SetParent(GameObject.Find("HoverPoint").transform);
+        this.ui.transform.localPosition = this.UIlocalPos;
+        this.ui.transform.localRotation = this.UIlocalRotation;
     }
 
     void Update()
@@ -64,7 +73,7 @@ public class LeftControllerActions : MonoBehaviour
             else if (this.leftHand.transform.rotation.x - this.xRotation < -0.01)
                 this.tool.prevTool();
         }
-        if (Time.frameCount % 10 == 0)
+        if (Time.frameCount % 5 == 0)
             this.xRotation = this.leftHand.transform.rotation.x;
     }
 }
