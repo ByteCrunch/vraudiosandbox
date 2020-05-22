@@ -1012,6 +1012,9 @@ MonoBehaviour:
   LeftMenu:
     actionPath: /actions/default/in/LeftMenu
     needsReinit: 0
+  Scroll:
+    actionPath: /actions/default/in/Scroll
+    needsReinit: 0
   handType: 1
   LeftMenuActive: 0
 --- !u!1 &643051998
