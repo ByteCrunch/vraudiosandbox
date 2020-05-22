@@ -39,9 +39,7 @@ namespace Valve.VR
         
         private static SteamVR_Action_Boolean p_default_Rewind;
         
-        private static SteamVR_Action_Boolean p_default_ScaleMeshYDec;
-        
-        private static SteamVR_Action_Boolean p_default_ScaleMeshYInc;
+        private static SteamVR_Action_Vector2 p_default_Scroll;
         
         private static SteamVR_Action_Boolean p_default_Hold;
         
@@ -151,19 +149,11 @@ namespace Valve.VR
             }
         }
         
-        public static SteamVR_Action_Boolean default_ScaleMeshYDec
+        public static SteamVR_Action_Vector2 default_Scroll
         {
             get
             {
-                return SteamVR_Actions.p_default_ScaleMeshYDec.GetCopy<SteamVR_Action_Boolean>();
-            }
-        }
-        
-        public static SteamVR_Action_Boolean default_ScaleMeshYInc
-        {
-            get
-            {
-                return SteamVR_Actions.p_default_ScaleMeshYInc.GetCopy<SteamVR_Action_Boolean>();
+                return SteamVR_Actions.p_default_Scroll.GetCopy<SteamVR_Action_Vector2>();
             }
         }
         
@@ -261,8 +251,7 @@ namespace Valve.VR
                     SteamVR_Actions.default_HeadsetOnHead,
                     SteamVR_Actions.default_PlayStop,
                     SteamVR_Actions.default_Rewind,
-                    SteamVR_Actions.default_ScaleMeshYDec,
-                    SteamVR_Actions.default_ScaleMeshYInc,
+                    SteamVR_Actions.default_Scroll,
                     SteamVR_Actions.default_Hold,
                     SteamVR_Actions.default_LeftMenu,
                     SteamVR_Actions.default_Haptic,
@@ -285,8 +274,7 @@ namespace Valve.VR
                     SteamVR_Actions.default_HeadsetOnHead,
                     SteamVR_Actions.default_PlayStop,
                     SteamVR_Actions.default_Rewind,
-                    SteamVR_Actions.default_ScaleMeshYDec,
-                    SteamVR_Actions.default_ScaleMeshYInc,
+                    SteamVR_Actions.default_Scroll,
                     SteamVR_Actions.default_Hold,
                     SteamVR_Actions.default_LeftMenu,
                     SteamVR_Actions.platformer_Move,
@@ -311,8 +299,6 @@ namespace Valve.VR
                     SteamVR_Actions.default_HeadsetOnHead,
                     SteamVR_Actions.default_PlayStop,
                     SteamVR_Actions.default_Rewind,
-                    SteamVR_Actions.default_ScaleMeshYDec,
-                    SteamVR_Actions.default_ScaleMeshYInc,
                     SteamVR_Actions.default_Hold,
                     SteamVR_Actions.default_LeftMenu,
                     SteamVR_Actions.platformer_Jump,
@@ -322,6 +308,7 @@ namespace Valve.VR
                     SteamVR_Actions.default_Squeeze,
                     SteamVR_Actions.buggy_Throttle};
             Valve.VR.SteamVR_Input.actionsVector2 = new Valve.VR.SteamVR_Action_Vector2[] {
+                    SteamVR_Actions.default_Scroll,
                     SteamVR_Actions.platformer_Move,
                     SteamVR_Actions.buggy_Steering};
             Valve.VR.SteamVR_Input.actionsVector3 = new Valve.VR.SteamVR_Action_Vector3[0];
@@ -337,8 +324,7 @@ namespace Valve.VR
                     SteamVR_Actions.default_HeadsetOnHead,
                     SteamVR_Actions.default_PlayStop,
                     SteamVR_Actions.default_Rewind,
-                    SteamVR_Actions.default_ScaleMeshYDec,
-                    SteamVR_Actions.default_ScaleMeshYInc,
+                    SteamVR_Actions.default_Scroll,
                     SteamVR_Actions.default_Hold,
                     SteamVR_Actions.default_LeftMenu,
                     SteamVR_Actions.platformer_Move,
@@ -362,8 +348,7 @@ namespace Valve.VR
             SteamVR_Actions.p_default_HeadsetOnHead = ((SteamVR_Action_Boolean)(SteamVR_Action.Create<SteamVR_Action_Boolean>("/actions/default/in/HeadsetOnHead")));
             SteamVR_Actions.p_default_PlayStop = ((SteamVR_Action_Boolean)(SteamVR_Action.Create<SteamVR_Action_Boolean>("/actions/default/in/PlayStop")));
             SteamVR_Actions.p_default_Rewind = ((SteamVR_Action_Boolean)(SteamVR_Action.Create<SteamVR_Action_Boolean>("/actions/default/in/Rewind")));
-            SteamVR_Actions.p_default_ScaleMeshYDec = ((SteamVR_Action_Boolean)(SteamVR_Action.Create<SteamVR_Action_Boolean>("/actions/default/in/ScaleMeshYDec")));
-            SteamVR_Actions.p_default_ScaleMeshYInc = ((SteamVR_Action_Boolean)(SteamVR_Action.Create<SteamVR_Action_Boolean>("/actions/default/in/ScaleMeshYInc")));
+            SteamVR_Actions.p_default_Scroll = ((SteamVR_Action_Vector2)(SteamVR_Action.Create<SteamVR_Action_Vector2>("/actions/default/in/Scroll")));
             SteamVR_Actions.p_default_Hold = ((SteamVR_Action_Boolean)(SteamVR_Action.Create<SteamVR_Action_Boolean>("/actions/default/in/Hold")));
             SteamVR_Actions.p_default_LeftMenu = ((SteamVR_Action_Boolean)(SteamVR_Action.Create<SteamVR_Action_Boolean>("/actions/default/in/LeftMenu")));
             SteamVR_Actions.p_default_Haptic = ((SteamVR_Action_Vibration)(SteamVR_Action.Create<SteamVR_Action_Vibration>("/actions/default/out/Haptic")));

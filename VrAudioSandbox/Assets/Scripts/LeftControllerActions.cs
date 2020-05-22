@@ -6,13 +6,15 @@ using Valve.VR;
 public class LeftControllerActions : MonoBehaviour
 {
     public SteamVR_Action_Boolean LeftMenu;
+    public SteamVR_Action_Vector2 Scroll;
+
     public SteamVR_Input_Sources handType;
     private GameObject leftHand;
     private float yRotation;
 
     public bool LeftMenuActive = false;
-    private Vector3 UIworldPos;
-    private Vector3 UIlocalPos;
+    private Vector3 ToolUIworldPos;
+    private Vector3 ToolUIlocalPos;
     private Quaternion UIlocalRotation;
 
     private AudioEngine audioEngine;
@@ -37,6 +39,7 @@ public class LeftControllerActions : MonoBehaviour
 
         this.LeftMenu.AddOnStateDownListener(this.LeftMenuActivate, handType);
         this.LeftMenu.AddOnStateUpListener(this.LeftMenuDeactivate, handType);
+        this.Scroll.AddOnAxisListener(this.ScaleMesh, handType);
     }
 
     private void LeftMenuActivate (SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -44,12 +47,12 @@ public class LeftControllerActions : MonoBehaviour
         this.LeftMenuActive = true;
         this.ui.SetActive(true);
 
-        this.UIworldPos = this.ui.transform.position;
-        this.UIlocalPos = this.ui.transform.localPosition;
+        this.ToolUIworldPos = this.ui.transform.position;
+        this.ToolUIlocalPos = this.ui.transform.localPosition;
         this.UIlocalRotation = this.ui.transform.localRotation;
 
         this.ui.transform.SetParent(null, true);
-        this.ui.transform.position = this.UIworldPos;
+        this.ui.transform.position = this.ToolUIworldPos;
 
         this.yRotation = this.leftHand.transform.rotation.y;
     }
@@ -59,8 +62,13 @@ public class LeftControllerActions : MonoBehaviour
         this.LeftMenuActive = false;
         this.ui.SetActive(false);
         this.ui.transform.SetParent(GameObject.Find("HoverPoint").transform);
-        this.ui.transform.localPosition = this.UIlocalPos;
+        this.ui.transform.localPosition = this.ToolUIlocalPos;
         this.ui.transform.localRotation = this.UIlocalRotation;
+    }
+
+    public void ScaleMesh(SteamVR_Action_Vector2 fromAction, SteamVR_Input_Sources fromSource, Vector2 axis, Vector2 delta)
+    {
+        this.spectrum.ScaleMeshY(delta.y / 10);
     }
 
     void Update()
