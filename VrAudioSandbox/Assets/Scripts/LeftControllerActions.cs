@@ -8,7 +8,7 @@ public class LeftControllerActions : MonoBehaviour
     public SteamVR_Action_Boolean LeftMenu;
     public SteamVR_Input_Sources handType;
     private GameObject leftHand;
-    private float xRotation;
+    private float yRotation;
 
     public bool LeftMenuActive = false;
     private Vector3 UIworldPos;
@@ -37,8 +37,6 @@ public class LeftControllerActions : MonoBehaviour
 
         this.LeftMenu.AddOnStateDownListener(this.LeftMenuActivate, handType);
         this.LeftMenu.AddOnStateUpListener(this.LeftMenuDeactivate, handType);
-
-        this.xRotation = this.leftHand.transform.rotation.x;
     }
 
     private void LeftMenuActivate (SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -52,6 +50,8 @@ public class LeftControllerActions : MonoBehaviour
 
         this.ui.transform.SetParent(null, true);
         this.ui.transform.position = this.UIworldPos;
+
+        this.yRotation = this.leftHand.transform.rotation.y;
     }
 
     private void LeftMenuDeactivate(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
@@ -68,12 +68,16 @@ public class LeftControllerActions : MonoBehaviour
         // Handle tool selection menu
         if (this.LeftMenuActive)
         {
-            if (this.leftHand.transform.rotation.x - this.xRotation > 0.01)
+            if (this.leftHand.transform.rotation.y - this.yRotation > 0.05)
+            {
                 this.tool.nextTool();
-            else if (this.leftHand.transform.rotation.x - this.xRotation < -0.01)
+                this.yRotation = this.leftHand.transform.rotation.y;
+            }
+                
+            else if (this.yRotation - this.leftHand.transform.rotation.y > 0.05) { 
                 this.tool.prevTool();
+                this.yRotation = this.leftHand.transform.rotation.y;
+            }
         }
-        if (Time.frameCount % 5 == 0)
-            this.xRotation = this.leftHand.transform.rotation.x;
     }
 }
