@@ -40,7 +40,7 @@ public class ToolHandler : MonoBehaviour
 
         // Init Tools
         this.tools = new Tool[Enum.GetNames(typeof(ToolType)).Length];
-        this.tools[(int)ToolType.SpectrumPainter] = new Tool(ToolType.SpectrumPainter, new Color32(185, 255, 255, 100), GameObject.Find("IconSpectrumPainter").GetComponent<Image>());
+        this.tools[(int)ToolType.SpectrumPainter] = new Tool(ToolType.SpectrumPainter, new Color32(50, 50, 255, 100), GameObject.Find("IconSpectrumPainter").GetComponent<Image>());
         this.tools[(int)ToolType.SpectrumPencil] = new Tool(ToolType.SpectrumPencil, new Color32(255, 185, 255, 100), GameObject.Find("IconSpectrumPencil").GetComponent<Image>());
         this.tools[(int)ToolType.SpectrumEraser] = new Tool(ToolType.SpectrumEraser, new Color32(255, 50, 50, 100), GameObject.Find("IconSpectrumEraser").GetComponent<Image>());
         this.changeTool(ToolType.SpectrumPainter);

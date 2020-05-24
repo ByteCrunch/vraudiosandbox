@@ -34,7 +34,7 @@ public class LeftControllerActions : MonoBehaviour
         this.spectrum = GameObject.Find("SpectrumMesh").GetComponent<SpectrumMeshGenerator>();
         this.tool = this.GetComponent<ToolHandler>();
 
-        this.ui = GameObject.Find("UI");
+        this.ui = GameObject.Find("UITool");
         this.ui.SetActive(false);
 
         this.LeftMenu.AddOnStateDownListener(this.LeftMenuActivate, handType);

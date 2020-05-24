@@ -7,8 +7,6 @@ public class RightControllerActions : MonoBehaviour
 {
     public SteamVR_Action_Boolean PlayStop;
     public SteamVR_Action_Boolean Rewind;
-    public SteamVR_Action_Boolean ScaleMeshYDec;
-    public SteamVR_Action_Boolean ScaleMeshYInc;
     public SteamVR_Action_Boolean hold;
 
     public SteamVR_Input_Sources handType;
