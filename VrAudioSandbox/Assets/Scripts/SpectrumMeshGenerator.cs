@@ -272,9 +272,7 @@ public class SpectrumMeshGenerator : MonoBehaviour
     /// <param name="offset">positive or negative offset applied to y-scale</param>
     public void ScaleMeshY(float offset)
     {
-        Vector3 scale = gameObject.transform.localScale;
-        UnityEngine.Debug.Log(scale.ToString());
-        GameObject.Find("Spectrum").transform.localScale.Set(scale.x, scale.y + offset, scale.z);
+        this.transform.localScale = new Vector3(this.transform.localScale.x, this.transform.localScale.y + offset, this.transform.localScale.z);
     }
 
     /*

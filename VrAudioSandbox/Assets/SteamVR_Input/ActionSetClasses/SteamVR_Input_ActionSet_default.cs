@@ -105,19 +105,11 @@ namespace Valve.VR
             }
         }
         
-        public virtual SteamVR_Action_Boolean ScaleMeshYDec
+        public virtual SteamVR_Action_Vector2 Scroll
         {
             get
             {
-                return SteamVR_Actions.default_ScaleMeshYDec;
-            }
-        }
-        
-        public virtual SteamVR_Action_Boolean ScaleMeshYInc
-        {
-            get
-            {
-                return SteamVR_Actions.default_ScaleMeshYInc;
+                return SteamVR_Actions.default_Scroll;
             }
         }
         
@@ -126,6 +118,14 @@ namespace Valve.VR
             get
             {
                 return SteamVR_Actions.default_Hold;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean LeftMenu
+        {
+            get
+            {
+                return SteamVR_Actions.default_LeftMenu;
             }
         }
         

@@ -25,8 +25,6 @@ public class RightControllerActions : MonoBehaviour
 
         this.PlayStop.AddOnStateDownListener(this.PlayStopDown, handType);
         this.Rewind.AddOnStateDownListener(this.RewindDown, handType);
-        this.ScaleMeshYDec.AddOnStateDownListener(this.ScaleMeshYDecDown, handType);
-        this.ScaleMeshYInc.AddOnStateDownListener(this.ScaleMeshYIncDown, handType);
         this.hold.AddOnStateDownListener(this.TriggerDown, handType);
         this.hold.AddOnStateUpListener(this.TriggerUp, handType);
     }
@@ -46,16 +44,6 @@ public class RightControllerActions : MonoBehaviour
     private void RewindDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
         this.audioEngine.Rewind();
-    }
-
-    private void ScaleMeshYDecDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-    {
-        this.spectrum.ScaleMeshY(-0.05f);
-    }
-
-    private void ScaleMeshYIncDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
-    {
-        this.spectrum.ScaleMeshY(0.05f);
     }
 
     private void TriggerDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)

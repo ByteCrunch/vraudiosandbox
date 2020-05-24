@@ -4,6 +4,7 @@ using System.Linq;
 using NAudio;
 using SimpleFileBrowser;
 using UnityEngine;
+using Valve.VR.Extras;
 
 public class AudioEngine : MonoBehaviour
 {
@@ -33,7 +34,7 @@ public class AudioEngine : MonoBehaviour
     private NAudio.Wave.WaveStream waveProvider;
     private LoopStream loopStream;
 
-    public bool fftDataEdited;
+    public bool fftDataEdited = false;
     private float[] audioData;
     private byte[] playbackBuffer;
     private System.IO.Stream memoryStream;
@@ -53,6 +54,7 @@ public class AudioEngine : MonoBehaviour
     public bool isPlaying;
 
     private SpectrumMeshGenerator spectrum;
+    private SteamVR_LaserPointer laser;
     private Fft fft;
 
     /// <summary>
@@ -61,6 +63,7 @@ public class AudioEngine : MonoBehaviour
     void Awake()
     {
         this.spectrum = GameObject.Find("SpectrumMesh").GetComponent<SpectrumMeshGenerator>();
+        this.laser = GameObject.Find("RightHand").GetComponent<SteamVR_LaserPointer>();
 
         if (!Application.isEditor)
         {
@@ -149,7 +152,8 @@ public class AudioEngine : MonoBehaviour
         }
 
         this.DoFft();
-        this.fftDataEdited = true;
+        this.DoIfft();
+        this.fftDataEdited = false;
         this.spectrum.GenerateMeshFromAudioData();
         
     }
@@ -159,27 +163,27 @@ public class AudioEngine : MonoBehaviour
     /// </summary>
     public void Play()
     {
-        // Do IFFT first if there are changes in the spectrum
-        if (this.fftDataEdited)
-        {
-            this.DoIfft();
-            this.fftDataEdited = false;
+        this.laser.enabled = false;
 
-        }
+        // Do IFFT if there are changes in the spectrum
+        if (this.fftDataEdited)
+            this.DoIfft();
 
         Debug.Log("<AudioEngine> Play");
 
-        if (this.waveOut == null)
-        {
-            this.waveProvider = new NAudio.Wave.RawSourceWaveStream(
+        this.waveProvider = new NAudio.Wave.RawSourceWaveStream(
                 this.memoryStream,
                 NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(this.importSampleRate, this.importChannels)
                 );
+
+        if (this.waveOut == null)
+        {
             this.waveOut = new NAudio.Wave.WaveOutEvent();
             this.waveOut.PlaybackStopped += OnPlaybackStopped;
-            this.loopStream = new LoopStream(this.waveProvider);
-            this.waveOut.Init(this.loopStream);
         }
+        this.loopStream = new LoopStream(this.waveProvider);
+        this.waveOut.Init(this.loopStream);
+
         this.waveOut.Play();
         this.isPlaying = true;
     }
@@ -189,6 +193,8 @@ public class AudioEngine : MonoBehaviour
     /// </summary>
     public void Stop() 
     {
+        this.laser.enabled = true;
+
         this.waveOut.Stop();
         this.isPlaying = false;
         this.spectrum.ResetMeshColors();
@@ -348,12 +354,12 @@ public class AudioEngine : MonoBehaviour
     /// </summary>
     public void DoIfft()
     {
-        if (this.fftData != null && this.fftData.Length > 0)
+        if (this.fftDataMagnitudes != null && this.fftDataMagnitudes.Length > 0)
         {
             // Do IFFT per chunk
-            double[][] result = new double[this.fftData.Length][];
+            double[][] result = new double[this.fftDataMagnitudes.Length][];
 
-            for (int i = 0; i < this.fftData.Length; i++)
+            for (int i = 0; i < this.fftDataMagnitudes.Length; i++)
             {
                 // result of ifft is in interleaved complex format - take only even indexes (the real part)
                 result[i] = fft.RunIfft(Fft.GetFftDataFromMagnitudeAndPhase(this.fftDataMagnitudes[i], this.fftDataPhases[i]))
@@ -398,7 +404,6 @@ public class AudioEngine : MonoBehaviour
                     }
                 }
             }
-
             this.FillPlaybackBuffer();
         }
     }
@@ -424,6 +429,7 @@ public class AudioEngine : MonoBehaviour
         }
         this.memoryStream = new System.IO.MemoryStream(this.playbackBuffer);
         this.memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
+        Debug.Log("<AudioEngine> playback buffer updated");
     }
 
 
