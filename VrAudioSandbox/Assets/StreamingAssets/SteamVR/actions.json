@@ -52,16 +52,37 @@
       "requirement": "mandatory"
     },
     {
-      "name": "/actions/default/in/Scroll",
-      "type": "vector2"
-    },
-    {
       "name": "/actions/default/in/Hold",
       "type": "boolean",
       "requirement": "mandatory"
     },
     {
-      "name": "/actions/default/in/LeftMenu",
+      "name": "/actions/default/in/ToolMenu",
+      "type": "boolean",
+      "requirement": "mandatory"
+    },
+    {
+      "name": "/actions/default/in/ToggleMainMenu",
+      "type": "boolean",
+      "requirement": "mandatory"
+    },
+    {
+      "name": "/actions/default/in/IncToolRadius",
+      "type": "boolean",
+      "requirement": "mandatory"
+    },
+    {
+      "name": "/actions/default/in/DecToolRadius",
+      "type": "boolean",
+      "requirement": "mandatory"
+    },
+    {
+      "name": "/actions/default/in/IncTargetValue",
+      "type": "boolean",
+      "requirement": "mandatory"
+    },
+    {
+      "name": "/actions/default/in/DecTargetValue",
       "type": "boolean",
       "requirement": "mandatory"
     },

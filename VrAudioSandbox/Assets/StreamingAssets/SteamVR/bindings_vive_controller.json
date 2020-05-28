@@ -147,24 +147,6 @@
             {
                "inputs" : {
                   "click" : {
-                     "output" : "/actions/default/in/leftmenu"
-                  }
-               },
-               "mode" : "button",
-               "path" : "/user/hand/left/input/trigger"
-            },
-            {
-               "inputs" : {
-                  "click" : {
-                     "output" : "/actions/default/in/teleport"
-                  }
-               },
-               "mode" : "button",
-               "path" : "/user/hand/left/input/trackpad"
-            },
-            {
-               "inputs" : {
-                  "click" : {
                      "output" : "/actions/default/in/grabgrip"
                   }
                },
@@ -179,7 +161,7 @@
             {
                "inputs" : {
                   "click" : {
-                     "output" : "/actions/default/in/grabpinch"
+                     "output" : "/actions/default/in/toolmenu"
                   }
                },
                "mode" : "button",
@@ -237,7 +219,19 @@
             },
             {
                "inputs" : {
-                  "center" : {
+                  "held" : {
+                     "output" : "/actions/default/in/hold"
+                  }
+               },
+               "mode" : "button",
+               "path" : "/user/hand/right/input/trigger"
+            },
+            {
+               "inputs" : {
+                  "north" : {
+                     "output" : "/actions/default/in/teleport"
+                  },
+                  "south" : {
                      "output" : "/actions/default/in/playstop"
                   },
                   "west" : {
@@ -248,31 +242,37 @@
                "parameters" : {
                   "sub_mode" : "click"
                },
-               "path" : "/user/hand/right/input/trackpad"
+               "path" : "/user/hand/left/input/trackpad"
             },
             {
                "inputs" : {
-                  "held" : {
-                     "output" : "/actions/default/in/hold"
+                  "click" : {
+                     "output" : "/actions/default/in/togglemainmenu"
                   }
                },
                "mode" : "button",
-               "path" : "/user/hand/right/input/trigger"
+               "path" : "/user/hand/left/input/application_menu"
             },
             {
                "inputs" : {
-                  "scroll" : {
-                     "output" : "/actions/default/in/scroll"
+                  "east" : {
+                     "output" : "/actions/default/in/inctoolradius"
+                  },
+                  "north" : {
+                     "output" : "/actions/default/in/inctargetvalue"
+                  },
+                  "south" : {
+                     "output" : "/actions/default/in/dectargetvalue"
+                  },
+                  "west" : {
+                     "output" : "/actions/default/in/dectoolradius"
                   }
                },
-               "mode" : "scroll",
+               "mode" : "dpad",
                "parameters" : {
-                  "discrete_scroll_trackpad_flick_speed" : "0.908",
-                  "discrete_scroll_trackpad_slideandhold_enabled" : "false",
-                  "discrete_scroll_trackpad_slideandhold_pulseratefactor" : "1.4",
-                  "scroll_mode" : "discrete"
+                  "sub_mode" : "click"
                },
-               "path" : "/user/hand/left/input/trackpad"
+               "path" : "/user/hand/right/input/trackpad"
             }
          ]
       },

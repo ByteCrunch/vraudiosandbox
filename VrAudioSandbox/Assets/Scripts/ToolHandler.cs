@@ -25,6 +25,8 @@ public class ToolHandler : MonoBehaviour
     private List<Vector3> pointsToDraw;
     private LineRenderer lr;
 
+    public float toolRadius = 0.005f;
+
     public Tool[] tools;
     public ToolType SelectedToolType { get => selectedTool.type; }
     public bool TriggerDown { get => triggerDown; set => triggerDown = value; }
@@ -35,6 +37,7 @@ public class ToolHandler : MonoBehaviour
     {
         this.laserPointer.PointerClick += this.PointerClick;
         this.laserPointer.PointerIn += this.PointerIn;
+        this.laserPointer.thickness = this.toolRadius;
 
         this.lr = GetComponent<LineRenderer>();
 
@@ -90,13 +93,7 @@ public class ToolHandler : MonoBehaviour
     {
         if (this.SelectedToolType == ToolType.SpectrumPencil && e.target.name.StartsWith("FFTData"))
         {
-            deformer.DeformMeshPoint(e.point, Vector3.up, 0.01f, 0.8f);
-
-            return;
-        }
-        
-        if (e.target.name.StartsWith("UI"))
-        {
+            deformer.DeformMeshPoint(e.point, Vector3.up, this.toolRadius, 0.8f);
 
             return;
         }
@@ -124,9 +121,9 @@ public class ToolHandler : MonoBehaviour
             this.pointsToDraw = this.pointsToDraw.Distinct().ToList();
 
             if (this.SelectedToolType == ToolType.SpectrumPainter)
-                deformer.DeformMeshMultiplePoints(this.pointsToDraw, Vector3.up, 0.01f, 0.8f);
+                deformer.DeformMeshMultiplePoints(this.pointsToDraw, Vector3.up, this.toolRadius, 0.8f);
             else if (this.SelectedToolType == ToolType.SpectrumEraser)
-                deformer.DeformMeshMultiplePoints(this.pointsToDraw, Vector3.up, 0.02f, 0f);
+                deformer.DeformMeshMultiplePoints(this.pointsToDraw, Vector3.up, this.toolRadius, 0f);
 
             this.lr.positionCount = 0;
             this.lr.enabled = false;
@@ -135,6 +132,18 @@ public class ToolHandler : MonoBehaviour
             
             return;
         }
+    }
+
+    public void SetToolRadiusWithOffset(float offset)
+    {
+        if (this.toolRadius + offset > 0f && this.toolRadius + offset < 8f)
+        {
+            this.toolRadius += offset;
+            this.laserPointer.thickness = this.toolRadius;
+            this.lr.startWidth = this.toolRadius;
+            this.lr.endWidth = this.toolRadius;
+        }
+        
     }
 }
 

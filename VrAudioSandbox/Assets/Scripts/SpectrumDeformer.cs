@@ -11,7 +11,6 @@ public class SpectrumDeformer : MonoBehaviour
 {
     public Vector3[][] modifiedVertices;
     public List<DeformJob> routineQueue;
-
     public float deformFactor;
 
     private SpectrumMeshGenerator spectrum;

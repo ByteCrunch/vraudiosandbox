@@ -53,6 +53,7 @@ public class AudioEngine : MonoBehaviour
 
     public bool isPlaying;
 
+    private GameObject fileBrowserVr;
     private SpectrumMeshGenerator spectrum;
     private SteamVR_LaserPointer laser;
     private Fft fft;
@@ -62,15 +63,26 @@ public class AudioEngine : MonoBehaviour
     /// </summary>
     void Awake()
     {
+        this.fileBrowserVr = GameObject.Find("SimpleFileBrowserCanvas");
+        this.fileBrowserVr.SetActive(false);
+
         this.spectrum = GameObject.Find("SpectrumMesh").GetComponent<SpectrumMeshGenerator>();
         this.laser = GameObject.Find("RightHand").GetComponent<SteamVR_LaserPointer>();
 
         if (!Application.isEditor)
         {
-            // Show file dialog when in standalone mode
             FileBrowser.SetFilters(true, new FileBrowser.Filter("Audio", ".wav", ".aiff", ".mp3", ".m4a", ".ogg"));
             FileBrowser.AddQuickLink("Examples", Application.dataPath + "/Resources/Audio/", null);
-            StartCoroutine(ShowLoadDialogCoroutine());
+
+            if (!UnityEngine.XR.XRDevice.isPresent)
+            {
+                // Show 2D file dialog when in standalone mode
+                StartCoroutine(ShowLoadDialogCoroutine());
+            } else {
+                // Show file dialog in Vr world space
+                this.fileBrowserVr.SetActive(true);
+                FileBrowser.SingleClickMode = true;
+            }
         } else {
 
             // Load audio data based on selection in AudioEngine component in Unity editor mode
@@ -111,8 +123,6 @@ public class AudioEngine : MonoBehaviour
     {
         // Show a load file dialog and wait for a response from user
         yield return FileBrowser.WaitForLoadDialog(false, null, "Load audio file", "Load");
-
-        Debug.Log(FileBrowser.Success + " " + FileBrowser.Result);
 
         if (FileBrowser.Success)
         {

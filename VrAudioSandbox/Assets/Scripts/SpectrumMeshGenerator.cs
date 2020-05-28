@@ -270,9 +270,9 @@ public class SpectrumMeshGenerator : MonoBehaviour
     /// Scales the whole mesh 
     /// </summary>
     /// <param name="offset">positive or negative offset applied to y-scale</param>
-    public void ScaleMeshY(float offset)
+    public void ScaleMeshY(float newY)
     {
-        this.transform.localScale = new Vector3(this.transform.localScale.x, this.transform.localScale.y + offset, this.transform.localScale.z);
+        this.transform.localScale = new Vector3(this.transform.localScale.x, newY, this.transform.localScale.z);
     }
 
     /*

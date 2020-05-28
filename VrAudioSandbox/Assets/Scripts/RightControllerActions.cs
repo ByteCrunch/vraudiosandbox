@@ -2,15 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Valve.VR;
+using Valve.VR.Extras;
 
 public class RightControllerActions : MonoBehaviour
 {
-    public SteamVR_Action_Boolean PlayStop;
-    public SteamVR_Action_Boolean Rewind;
+    public SteamVR_Action_Boolean DecToolRadius;
+    public SteamVR_Action_Boolean IncToolRadius;
     public SteamVR_Action_Boolean hold;
 
     public SteamVR_Input_Sources handType;
 
+    private SteamVR_LaserPointer laserPointer;
     private AudioEngine audioEngine;
     private SpectrumMeshGenerator spectrum;
     private ToolHandler tool;
@@ -20,28 +22,22 @@ public class RightControllerActions : MonoBehaviour
         this.audioEngine = GameObject.Find("Audio").GetComponent<AudioEngine>();
         this.spectrum = GameObject.Find("SpectrumMesh").GetComponent<SpectrumMeshGenerator>();
         this.tool = this.GetComponent<ToolHandler>();
+        this.laserPointer = GameObject.Find("RightHand").GetComponent<SteamVR_LaserPointer>();
 
-        this.PlayStop.AddOnStateDownListener(this.PlayStopDown, handType);
-        this.Rewind.AddOnStateDownListener(this.RewindDown, handType);
+        this.DecToolRadius.AddOnStateDownListener(this.DecToolRadiusDown, handType);
+        this.IncToolRadius.AddOnStateDownListener(this.IncToolRadiusDown, handType);
         this.hold.AddOnStateDownListener(this.TriggerDown, handType);
         this.hold.AddOnStateUpListener(this.TriggerUp, handType);
     }
 
-    private void PlayStopDown (SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    private void DecToolRadiusDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        if (!this.audioEngine.isPlaying)
-        {
-            this.audioEngine.Play();
-        }
-        else
-        {
-            this.audioEngine.Stop();
-        }
+        this.tool.SetToolRadiusWithOffset(-0.005f);
     }
-
-    private void RewindDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    
+    private void IncToolRadiusDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
-        this.audioEngine.Rewind();
+        this.tool.SetToolRadiusWithOffset(0.005f);
     }
 
     private void TriggerDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)

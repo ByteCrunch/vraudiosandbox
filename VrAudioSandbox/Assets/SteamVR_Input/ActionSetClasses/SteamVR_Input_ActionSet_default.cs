@@ -105,14 +105,6 @@ namespace Valve.VR
             }
         }
         
-        public virtual SteamVR_Action_Vector2 Scroll
-        {
-            get
-            {
-                return SteamVR_Actions.default_Scroll;
-            }
-        }
-        
         public virtual SteamVR_Action_Boolean Hold
         {
             get
@@ -121,11 +113,51 @@ namespace Valve.VR
             }
         }
         
-        public virtual SteamVR_Action_Boolean LeftMenu
+        public virtual SteamVR_Action_Boolean ToolMenu
         {
             get
             {
-                return SteamVR_Actions.default_LeftMenu;
+                return SteamVR_Actions.default_ToolMenu;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean ToggleMainMenu
+        {
+            get
+            {
+                return SteamVR_Actions.default_ToggleMainMenu;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean IncToolRadius
+        {
+            get
+            {
+                return SteamVR_Actions.default_IncToolRadius;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean DecToolRadius
+        {
+            get
+            {
+                return SteamVR_Actions.default_DecToolRadius;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean IncTargetValue
+        {
+            get
+            {
+                return SteamVR_Actions.default_IncTargetValue;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean DecTargetValue
+        {
+            get
+            {
+                return SteamVR_Actions.default_DecTargetValue;
             }
         }
         
