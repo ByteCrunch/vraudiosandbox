@@ -92,7 +92,7 @@ public class LeftControllerActions : MonoBehaviour
         this.toolMenuActive = false;
         this.uiTool.SetActive(false);
         
-        this.uiTool.transform.SetParent(GameObject.Find("HoverPoint").transform);
+        this.uiTool.transform.SetParent(GameObject.Find("HoverPointLeft").transform);
         this.uiTool.transform.localPosition = this.ToolUIlocalPos;
         this.uiTool.transform.localRotation = this.UIlocalRotation;
     }

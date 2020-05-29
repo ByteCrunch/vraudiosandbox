@@ -447,7 +447,7 @@ MonoBehaviour:
   savedUp: {x: -0.000000014901161, y: 1, z: 0}
   savedRectSize: {x: 200, y: 50}
   savedColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  savedTextUV0: {x: 0.009765625, y: 0.09082031}
+  savedTextUV0: {x: 0.578125, y: 0}
   savedFill: 0
 --- !u!1 &128612598 stripped
 GameObject:
@@ -1827,6 +1827,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 1000013428287994, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
+      propertyPath: m_Name
+      value: HoverPointLeft
+      objectReference: {fileID: 0}
     - target: {fileID: 1000013804283954, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
       value: 2
@@ -2978,7 +2982,7 @@ MonoBehaviour:
   savedUp: {x: 0, y: 1, z: 0}
   savedRectSize: {x: 1000, y: 100}
   savedColor: {r: 1, g: 1, b: 1, a: 1}
-  savedTextUV0: {x: 0.017578125, y: 0.12109375}
+  savedTextUV0: {x: 0.03515625, y: 0.123046875}
   savedFill: 0
 --- !u!114 &813210794
 MonoBehaviour:
@@ -4084,7 +4088,7 @@ MonoBehaviour:
   savedUp: {x: -0.000000014901161, y: 1, z: 0}
   savedRectSize: {x: 200, y: 50}
   savedColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  savedTextUV0: {x: 0.203125, y: 0.095703125}
+  savedTextUV0: {x: 0.52734375, y: 0.03515625}
   savedFill: 0
 --- !u!114 &1190543844
 MonoBehaviour:
@@ -4310,7 +4314,7 @@ MonoBehaviour:
   savedUp: {x: -0.000000014901161, y: 1, z: 0}
   savedRectSize: {x: 200, y: 50}
   savedColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  savedTextUV0: {x: 0.11328125, y: 0.078125}
+  savedTextUV0: {x: 0.20703125, y: 0.123046875}
   savedFill: 0
 --- !u!1 &1334792351 stripped
 GameObject:
@@ -4934,7 +4938,7 @@ MonoBehaviour:
   savedUp: {x: 0, y: 1, z: 0}
   savedRectSize: {x: 1600, y: 300}
   savedColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  savedTextUV0: {x: 0, y: 0.21386719}
+  savedTextUV0: {x: 0.8125, y: 0.08984375}
   savedFill: 0
 --- !u!114 &1946738330
 MonoBehaviour:
