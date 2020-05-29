@@ -25,7 +25,7 @@ public class ToolHandler : MonoBehaviour
     private List<Vector3> pointsToDraw;
     private LineRenderer lr;
 
-    public float toolRadius = 0.001f;
+    public float toolRadius;
 
     public Tool[] tools;
     public ToolType SelectedToolType { get => selectedTool.type; }
@@ -37,6 +37,7 @@ public class ToolHandler : MonoBehaviour
     {
         this.laserPointer.PointerClick += this.PointerClick;
         this.laserPointer.PointerIn += this.PointerIn;
+        this.toolRadius = 0.001f;
         this.laserPointer.thickness = this.toolRadius;
 
         this.lr = GetComponent<LineRenderer>();

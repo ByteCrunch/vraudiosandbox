@@ -77,11 +77,14 @@ public class AudioEngine : MonoBehaviour
             if (!UnityEngine.XR.XRDevice.isPresent)
             {
                 // Show 2D file dialog when in standalone mode
-                StartCoroutine(ShowLoadDialogCoroutine());
+                Debug.Log("This application is meant to be used in VR using a HMD. 2D mode fallback only supports basic display of audio information and simple navigation.");
+                //StartCoroutine(ShowLoadDialog2D()); disabled for now
+                
             } else {
                 // Show file dialog in Vr world space
                 this.fileBrowserVr.SetActive(true);
                 FileBrowser.SingleClickMode = true;
+                StartCoroutine(WaitForLoadDialog());
             }
         } else {
 
@@ -117,9 +120,9 @@ public class AudioEngine : MonoBehaviour
     }
 
     /// <summary>
-    /// Shows file browser dialog in standalone mode
+    /// Shows file browser dialog in 2D fallback standalone mode
     /// </summary>
-    IEnumerator ShowLoadDialogCoroutine()
+    IEnumerator ShowLoadDialog2D()
     {
         // Show a load file dialog and wait for a response from user
         yield return FileBrowser.WaitForLoadDialog(false, null, "Load audio file", "Load");
@@ -129,6 +132,23 @@ public class AudioEngine : MonoBehaviour
             this.filePath = FileBrowser.Result;
             this.LoadAudioData();
         }
+    }
+
+    /// <summary>
+    /// Shows file browser dialog in VR standalone mode
+    /// </summary>
+    IEnumerator WaitForLoadDialog()
+    {
+        while (!FileBrowser.Success)
+        {
+            if (!this.fileBrowserVr.activeSelf)
+                this.fileBrowserVr.SetActive(true);
+
+            yield return null;
+        }
+
+        this.filePath = FileBrowser.Result;
+        this.LoadAudioData();
     }
 
     /// <summary>
@@ -502,6 +522,11 @@ public class AudioEngine : MonoBehaviour
         {
             this.Rewind();
         }
+    }
+
+    public void ExitProgram()
+    {
+        Application.Quit();
     }
 
     /// <summary>
