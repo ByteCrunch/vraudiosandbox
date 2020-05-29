@@ -133,7 +133,7 @@ GameObject:
   - component: {fileID: 13707641}
   - component: {fileID: 13707640}
   - component: {fileID: 13707639}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: UITool
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -447,7 +447,7 @@ MonoBehaviour:
   savedUp: {x: -0.000000014901161, y: 1, z: 0}
   savedRectSize: {x: 200, y: 50}
   savedColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  savedTextUV0: {x: 0.111328125, y: 0.09667969}
+  savedTextUV0: {x: 0.4140625, y: 0.265625}
   savedFill: 0
 --- !u!1 &128612598 stripped
 GameObject:
@@ -523,7 +523,7 @@ MonoBehaviour:
     needsReinit: 0
   active: 1
   color: {r: 1, g: 1, b: 1, a: 0}
-  thickness: 0.002
+  thickness: 0.005
   clickColor: {r: 0.93684906, g: 0.9433962, b: 0.057849795, a: 1}
   holder: {fileID: 0}
   pointer: {fileID: 0}
@@ -964,7 +964,7 @@ GameObject:
   - component: {fileID: 431051520}
   - component: {fileID: 431051522}
   - component: {fileID: 431051521}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1508,7 +1508,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100470, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 101548, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
@@ -1552,7 +1552,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 129006, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 133480, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
@@ -1564,19 +1564,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 144230, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 160596, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 165334, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 167242, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 168724, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
@@ -1584,11 +1584,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 171246, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 177230, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 191996, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_IsActive
@@ -1659,6 +1659,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1000012617731570, guid: d07386f0ec952ec409dc7753bcf5746b,
         type: 3}
+    - target: {fileID: 11401046, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
+      propertyPath: useControllerHoverComponent
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 11450312, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Enabled
       value: 1
@@ -1668,6 +1672,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1000011547835092, guid: 8ade79fed86bbd141926d1cd94c98457,
         type: 3}
+    - target: {fileID: 11450312, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
+      propertyPath: useControllerHoverComponent
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 11464692, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -1770,7 +1778,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1000013428287994, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1000013804283954, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
@@ -1782,7 +1790,52 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1000014277073068, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
       propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000010591715100, guid: dc06161b6d97feb419f45f03b62e14b9,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000011273627542, guid: dc06161b6d97feb419f45f03b62e14b9,
+        type: 3}
+      propertyPath: onTransformUpdated.m_PersistentCalls.m_Calls.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000011273627542, guid: dc06161b6d97feb419f45f03b62e14b9,
+        type: 3}
+      propertyPath: poseAction.actionPath
+      value: /actions/default/in/Pose
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000011273627542, guid: dc06161b6d97feb419f45f03b62e14b9,
+        type: 3}
+      propertyPath: poseAction.needsReinit
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000011273627542, guid: dc06161b6d97feb419f45f03b62e14b9,
+        type: 3}
+      propertyPath: onTransformUpdated.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000011273627542, guid: dc06161b6d97feb419f45f03b62e14b9,
+        type: 3}
+      propertyPath: onTransformUpdated.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000011734077242, guid: dc06161b6d97feb419f45f03b62e14b9,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000011957598740, guid: dc06161b6d97feb419f45f03b62e14b9,
+        type: 3}
+      propertyPath: poseAction.actionPath
+      value: /actions/default/in/Pose
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000011957598740, guid: dc06161b6d97feb419f45f03b62e14b9,
+        type: 3}
+      propertyPath: poseAction.needsReinit
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114000013786455312, guid: dc06161b6d97feb419f45f03b62e14b9,
         type: 3}
@@ -1791,6 +1844,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 11461462, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
+    - {fileID: 114000011734077242, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
+    - {fileID: 114000010591715100, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
 --- !u!1 &534977067 stripped
 GameObject:
@@ -2747,7 +2802,7 @@ MonoBehaviour:
   savedUp: {x: 0, y: 1, z: 0}
   savedRectSize: {x: 1000, y: 100}
   savedColor: {r: 1, g: 1, b: 1, a: 1}
-  savedTextUV0: {x: 0.08203125, y: 0.029296875}
+  savedTextUV0: {x: 0, y: 0.17382812}
   savedFill: 0
 --- !u!114 &813210794
 MonoBehaviour:
@@ -2801,7 +2856,7 @@ GameObject:
   - component: {fileID: 823705863}
   - component: {fileID: 823705866}
   - component: {fileID: 823705865}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: IconSpectrumPainter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3105,7 +3160,7 @@ GameObject:
   - component: {fileID: 993201406}
   - component: {fileID: 993201408}
   - component: {fileID: 993201407}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3425,7 +3480,7 @@ GameObject:
   - component: {fileID: 1133247256}
   - component: {fileID: 1133247258}
   - component: {fileID: 1133247257}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3503,7 +3558,7 @@ GameObject:
   - component: {fileID: 1139743860}
   - component: {fileID: 1139743862}
   - component: {fileID: 1139743861}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: PanelTool
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3982,7 +4037,7 @@ MonoBehaviour:
   savedUp: {x: -0.000000014901161, y: 1, z: 0}
   savedRectSize: {x: 200, y: 50}
   savedColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  savedTextUV0: {x: 0.4609375, y: 0.06738281}
+  savedTextUV0: {x: 0.22265625, y: 0.390625}
   savedFill: 0
 --- !u!1 &1334792351 stripped
 GameObject:
@@ -4169,7 +4224,7 @@ GameObject:
   - component: {fileID: 1435006556}
   - component: {fileID: 1435006559}
   - component: {fileID: 1435006558}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: IconSpectrumEraser
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4606,7 +4661,7 @@ GameObject:
   - component: {fileID: 2093688438}
   - component: {fileID: 2093688441}
   - component: {fileID: 2093688440}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: IconSpectrumPencil
   m_TagString: Untagged
   m_Icon: {fileID: 0}

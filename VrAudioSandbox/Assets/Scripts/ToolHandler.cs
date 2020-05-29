@@ -25,7 +25,7 @@ public class ToolHandler : MonoBehaviour
     private List<Vector3> pointsToDraw;
     private LineRenderer lr;
 
-    public float toolRadius = 0.005f;
+    public float toolRadius = 0.001f;
 
     public Tool[] tools;
     public ToolType SelectedToolType { get => selectedTool.type; }
@@ -136,7 +136,7 @@ public class ToolHandler : MonoBehaviour
 
     public void SetToolRadiusWithOffset(float offset)
     {
-        if (this.toolRadius + offset > 0f && this.toolRadius + offset < 8f)
+        if (this.toolRadius + offset >= 0.001f && this.toolRadius + offset < 8f)
         {
             this.toolRadius += offset;
             this.laserPointer.thickness = this.toolRadius;
