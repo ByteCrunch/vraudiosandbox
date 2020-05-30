@@ -58,7 +58,7 @@ public class SpectrumDeformer : MonoBehaviour
         while (i < points.Count - 1)
         {
             float distance = (points[i] - points[i + 1]).magnitude;
-            if (distance > radius)
+            if (distance >= radius)
             {
                 int n = (int)(distance / radius);
                 for (int j = 1; j <= n; j++)

@@ -124,6 +124,7 @@ public class AudioEngine : MonoBehaviour
 
     public void OpenDialog()
     {
+        this.fileBrowserVr.SetActive(true);
         StartCoroutine(WaitForLoadDialog(false));
     }
 

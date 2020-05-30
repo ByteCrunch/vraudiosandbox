@@ -8,6 +8,8 @@ public class RightControllerActions : MonoBehaviour
 {
     public SteamVR_Action_Boolean DecToolRadius;
     public SteamVR_Action_Boolean IncToolRadius;
+    public SteamVR_Action_Boolean DecToolAbsoluteValue;
+    public SteamVR_Action_Boolean IncToolAbsoluteValue;
     public SteamVR_Action_Boolean hold;
 
     public SteamVR_Input_Sources handType;
@@ -26,6 +28,8 @@ public class RightControllerActions : MonoBehaviour
 
         this.DecToolRadius.AddOnStateDownListener(this.DecToolRadiusDown, handType);
         this.IncToolRadius.AddOnStateDownListener(this.IncToolRadiusDown, handType);
+        this.DecToolAbsoluteValue.AddOnStateDownListener(this.DecToolAbsoluteValueDown, handType);
+        this.IncToolAbsoluteValue.AddOnStateDownListener(this.IncToolAbsoluteValueDown, handType);
         this.hold.AddOnStateDownListener(this.TriggerDown, handType);
         this.hold.AddOnStateUpListener(this.TriggerUp, handType);
     }
@@ -38,6 +42,16 @@ public class RightControllerActions : MonoBehaviour
     private void IncToolRadiusDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
     {
         this.tool.SetToolRadiusWithOffset(0.005f);
+    }
+
+    private void DecToolAbsoluteValueDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        this.tool.SetToolAbsoluteValueOffset(-0.05f);
+    }
+    
+    private void IncToolAbsoluteValueDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
+    {
+        this.tool.SetToolAbsoluteValueOffset(0.05f);
     }
 
     private void TriggerDown(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource)
