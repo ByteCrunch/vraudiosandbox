@@ -1,7 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NAudio;
+using NAudio.Wave;
 using SimpleFileBrowser;
 using UnityEngine;
 using Valve.VR.Extras;
@@ -32,7 +35,7 @@ public class AudioEngine : MonoBehaviour
     private NAudio.Wave.WaveFileReader waveReader;
     private NAudio.Wave.WaveOutEvent waveOut;
     private NAudio.Wave.WaveStream waveProvider;
-    private LoopStream loopStream;
+    //private LoopStream loopStream;
 
     public bool fftDataEdited = false;
     private float[] audioData;
@@ -78,13 +81,12 @@ public class AudioEngine : MonoBehaviour
             {
                 // Show 2D file dialog when in standalone mode
                 Debug.Log("This application is meant to be used in VR using a HMD. 2D mode fallback only supports basic display of audio information and simple navigation.");
-                //StartCoroutine(ShowLoadDialog2D()); disabled for now
                 
             } else {
                 // Show file dialog in Vr world space
                 this.fileBrowserVr.SetActive(true);
                 FileBrowser.SingleClickMode = true;
-                StartCoroutine(WaitForLoadDialog());
+                StartCoroutine(WaitForLoadDialog(true));
             }
         } else {
 
@@ -119,29 +121,20 @@ public class AudioEngine : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Shows file browser dialog in 2D fallback standalone mode
-    /// </summary>
-    IEnumerator ShowLoadDialog2D()
-    {
-        // Show a load file dialog and wait for a response from user
-        yield return FileBrowser.WaitForLoadDialog(false, null, "Load audio file", "Load");
 
-        if (FileBrowser.Success)
-        {
-            this.filePath = FileBrowser.Result;
-            this.LoadAudioData();
-        }
+    public void OpenDialog()
+    {
+        StartCoroutine(WaitForLoadDialog(false));
     }
 
     /// <summary>
     /// Shows file browser dialog in VR standalone mode
     /// </summary>
-    IEnumerator WaitForLoadDialog()
+    IEnumerator WaitForLoadDialog(bool ignoreCancel)
     {
         while (!FileBrowser.Success)
         {
-            if (!this.fileBrowserVr.activeSelf)
+            if (ignoreCancel && !this.fileBrowserVr.activeSelf)
                 this.fileBrowserVr.SetActive(true);
 
             yield return null;
@@ -193,7 +186,7 @@ public class AudioEngine : MonoBehaviour
     /// </summary>
     public void Play()
     {
-        this.laser.enabled = false;
+        this.laser.active = false;
 
         // Do IFFT if there are changes in the spectrum
         if (this.fftDataEdited)
@@ -211,8 +204,8 @@ public class AudioEngine : MonoBehaviour
             this.waveOut = new NAudio.Wave.WaveOutEvent();
             this.waveOut.PlaybackStopped += OnPlaybackStopped;
         }
-        this.loopStream = new LoopStream(this.waveProvider);
-        this.waveOut.Init(this.loopStream);
+        //this.loopStream = new LoopStream(this.waveProvider);
+        this.waveOut.Init(this.waveProvider);
 
         this.waveOut.Play();
         this.isPlaying = true;
@@ -223,7 +216,7 @@ public class AudioEngine : MonoBehaviour
     /// </summary>
     public void Stop() 
     {
-        this.laser.enabled = true;
+        this.laser.active = true;
 
         this.waveOut.Stop();
         this.isPlaying = false;
@@ -243,7 +236,7 @@ public class AudioEngine : MonoBehaviour
     /// <returns>Playback position in milliseconds</returns>
     public double GetPositionInMs()
     {
-        long bytePos = this.loopStream.Position;
+        long bytePos = this.waveProvider.Position;
         //long bytePos = this.memoryStream.Position;
         double ms = bytePos / this.importSampleRate / 4 * 1000.0;
 
@@ -260,7 +253,7 @@ public class AudioEngine : MonoBehaviour
     /// <param name="loop">true: enable looping, false: disable looping</param>
     public void SetAudioLooping(bool loop)
     {
-        this.loopStream.EnableLooping = loop;
+       //this.loopStream.EnableLooping = loop;
     }
 
     /// <summary>
@@ -271,7 +264,7 @@ public class AudioEngine : MonoBehaviour
         Debug.Log("<AudioEngine> Rewind");
         if (this.waveOut != null)
         {
-            this.loopStream.Position = 0;
+            this.waveProvider.Position = 0;
             //this.memoryStream.Position = 0;
             this.spectrum.ResetMeshColors();
         }
@@ -462,6 +455,21 @@ public class AudioEngine : MonoBehaviour
         Debug.Log("<AudioEngine> playback buffer updated");
     }
 
+    public void WriteAudioToDisk()
+    {
+        // Do IFFT if there are changes in the spectrum
+        if (this.fftDataEdited)
+            this.DoIfft();
+
+        this.waveProvider = new NAudio.Wave.RawSourceWaveStream(
+                this.memoryStream,
+                NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(this.importSampleRate, this.importChannels)
+                );
+
+        string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory).ToString() + "/" + "VrAudioSandboxExport-" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".wav"); //TODO insert timestamp
+        WaveFileWriter.CreateWaveFile(path, this.waveProvider);
+    }
+ 
 
     /// <summary>
     /// Test function for FFT/IFFT routines
