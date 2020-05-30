@@ -108,6 +108,7 @@ public class SpectrumDeformer : MonoBehaviour
         // wait for last job
         jobHandles[this.modifiedVertices.Length - 1].Complete();
 
+        List<int> meshColorsToUpdate = new List<int>();
         // Update meshes, colliders & fftDataMagnitudes
         while (vertexChanges.TryDequeue(out VertexChange vc))
         {
@@ -118,10 +119,10 @@ public class SpectrumDeformer : MonoBehaviour
             if (frames % 30 == 0)
                 yield return null;
 
-            // Update color //TODO fix colors
-            this.spectrum.SetMaxPeakValue(this.spectrum.mFilters[vc.meshIdx].mesh.vertices[vc.vertexIdx].y);
-            this.spectrum.colors[vc.meshIdx][vc.vertexIdx] = Color.Lerp(Color.green, Color.red, this.modifiedVertices[vc.meshIdx][vc.vertexIdx + this.spectrum.startIndexOfPeakVertices].y / this.spectrum.maxPeakValue);
-            this.spectrum.mFilters[vc.meshIdx].mesh.SetColors(this.spectrum.colors[vc.meshIdx]);
+            // Note for color update
+            if (!meshColorsToUpdate.Contains(vc.meshIdx))
+                meshColorsToUpdate.Add(vc.meshIdx);
+            this.spectrum.SetMaxPeakValue(this.modifiedVertices[vc.meshIdx][vc.vertexIdx].y);
 
             // Update colliders
             MeshCollider c = GameObject.Find("FFTData" + vc.meshIdx.ToString()).GetComponent<MeshCollider>();
@@ -135,8 +136,17 @@ public class SpectrumDeformer : MonoBehaviour
 
         vertexChanges.Dispose();
 
-        this.audioEngine.fftDataEdited = true;
+        // Update mesh colors
+        foreach (int m in meshColorsToUpdate)
+        {
+            for (int v = 0; v < this.spectrum.colors[m].Length; v++)
+            {
+                this.spectrum.colors[m][v] = Color.Lerp(Color.green, Color.red, this.modifiedVertices[m][v].y / this.spectrum.maxPeakValue);
+            }
+            this.spectrum.mFilters[m].mesh.SetColors(this.spectrum.colors[m]);
+        }
 
+        this.audioEngine.fftDataEdited = true;
         routine.isFinished = true;
     }
 
@@ -215,10 +225,14 @@ public struct FindPointsToUpdateJob : IJobParallelFor
             var distance = (new Vector3(points[p].x, 0, points[p].z) - new Vector3(vertices[i].x, 0, vertices[i].z)).magnitude;
             if (distance < radius)
             {
-                // TODO Limit new position according y-scale of mesh, don't allow positions less than 0
                 if (absoluteValue == -1)
                     // use factor for changing of y-value
-                    vertexChanges.Enqueue(new VertexChange(meshIdx, i, vertices[i].x + direction.x * deformFactor, vertices[i].y + direction.y * deformFactor, vertices[i].z + direction.z * deformFactor));
+                    vertexChanges.Enqueue(new VertexChange(
+                        meshIdx,
+                        i,
+                        vertices[i].x + direction.x * deformFactor,
+                        (vertices[i].y + direction.y * deformFactor >= 0) ? vertices[i].y + direction.y * deformFactor : 0f,
+                        vertices[i].z + direction.z * deformFactor));
                 else
                     // use absolute value
                     vertexChanges.Enqueue(new VertexChange(meshIdx, i, vertices[i].x, absoluteValue, vertices[i].z));
