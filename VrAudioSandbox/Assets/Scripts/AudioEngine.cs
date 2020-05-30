@@ -74,9 +74,6 @@ public class AudioEngine : MonoBehaviour
 
         if (!Application.isEditor)
         {
-            FileBrowser.SetFilters(true, new FileBrowser.Filter("Audio", ".wav", ".aiff", ".mp3", ".m4a", ".ogg"));
-            FileBrowser.AddQuickLink("Examples", Application.dataPath + "/Resources/Audio/", null);
-
             if (!UnityEngine.XR.XRDevice.isPresent)
             {
                 // Show 2D file dialog when in standalone mode
@@ -86,6 +83,8 @@ public class AudioEngine : MonoBehaviour
                 // Show file dialog in Vr world space
                 this.fileBrowserVr.SetActive(true);
                 FileBrowser.SingleClickMode = true;
+                FileBrowser.SetFilters(true, new FileBrowser.Filter("Audio", ".wav", ".aiff", ".mp3", ".m4a", ".ogg"));
+                FileBrowser.AddQuickLink("Examples", Application.dataPath + "/Resources/Audio/", null);
                 StartCoroutine(WaitForLoadDialog(true));
             }
         } else {
