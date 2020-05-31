@@ -35,12 +35,11 @@ public class AudioEngine : MonoBehaviour
     private NAudio.Wave.WaveFileReader waveReader;
     private NAudio.Wave.WaveOutEvent waveOut;
     private NAudio.Wave.WaveStream waveProvider;
-    //private LoopStream loopStream;
 
     public bool fftDataEdited = false;
     private float[] audioData;
     private byte[] playbackBuffer;
-    private System.IO.Stream memoryStream;
+    private Stream memoryStream;
 
     public int importSampleRate;
     public int importBitDepth;

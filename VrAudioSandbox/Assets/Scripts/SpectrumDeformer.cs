@@ -122,7 +122,7 @@ public class SpectrumDeformer : MonoBehaviour
             // Note for color update
             if (!meshColorsToUpdate.Contains(vc.meshIdx))
                 meshColorsToUpdate.Add(vc.meshIdx);
-            this.spectrum.SetMaxPeakValue(this.modifiedVertices[vc.meshIdx][vc.vertexIdx].y);
+            this.spectrum.SetMaxPeakValue(this.modifiedVertices[vc.meshIdx][vc.vertexIdx].y * this.spectrum.fftScalingFactor);
 
             // Update colliders
             MeshCollider c = GameObject.Find("FFTData" + vc.meshIdx.ToString()).GetComponent<MeshCollider>();
