@@ -153,7 +153,7 @@ public class AudioEngine : MonoBehaviour
 
         this.importSampleRate = this.waveReader.WaveFormat.SampleRate;
         this.importBitDepth = this.waveReader.WaveFormat.BitsPerSample;
-        this.importChannels = this.waveReader.WaveFormat.Channels; //TODO multi channel support
+        this.importChannels = this.waveReader.WaveFormat.Channels;
         this.importDurationInMs = this.waveReader.TotalTime.TotalMilliseconds;
 
         long numOfSamples = this.waveReader.SampleCount * this.importChannels;
@@ -165,9 +165,8 @@ public class AudioEngine : MonoBehaviour
         while ((sample = this.waveReader.ReadNextSampleFrame()) != null)
         {
             if (sample.Length > 1) {
-                //TODO multi channel support - only take first channel for now
                 Debug.Log("<AudioEngine> multi-channel audio files are not supported right now - so only first channel is used, number of channels in the input file: " + this.importChannels.ToString());
-                this.importChannels = 1; //override, because only mono supported for now
+                this.importChannels = 1; //override, because only mono supported
             }
             this.audioData[pos] = sample[0];
             pos++;
@@ -315,7 +314,7 @@ public class AudioEngine : MonoBehaviour
                 " fftSize: " + this.fftSize.ToString() +
                 " numberOfChunks: " + this.audioNumOfChunks.ToString() +
                 " numberOfChunks with " + (100 * this.fftOverlapPercent).ToString() + "% overlap: " + this.fftNumOfChunks.ToString() +
-                " binResolution: " + (this.importSampleRate / 2 / this.fftSize).ToString() + "Hz"
+                " binResolution: " + (this.importSampleRate / this.fftSize).ToString() + "Hz"
                 );
 
             
@@ -362,7 +361,6 @@ public class AudioEngine : MonoBehaviour
                 result[i] = this.fft.RunFft(input[i], true);
                 magnitudes[i] = Fft.GetMagnitudes(result[i]);
                 phases[i] = Fft.GetPhaseInformation(result[i], magnitudes[i]);
-                //phases[i] = Fft.GetPhaseInformation(result[i]);
 
                 this.fftData = result;
                 this.fftDataMagnitudes = magnitudes;
@@ -388,7 +386,8 @@ public class AudioEngine : MonoBehaviour
                     .Where((value, index) => index % 2 == 0).ToArray();
             }
             
-            //this.PrintFftData(fft.RunIfft(this.fftData[1337]), fft.RunIfft(Fft.GetFftDataFromMagnitudeAndPhase(this.fftDataMagnitudes[1337], this.fftDataPhases[1337])), "fftdata.txt");
+            // For debugging
+            // this.PrintFftData(fft.RunIfft(this.fftData[1337]), fft.RunIfft(Fft.GetFftDataFromMagnitudeAndPhase(this.fftDataMagnitudes[1337], this.fftDataPhases[1337])), "fftdata.txt");
 
             // Get window function factors
             double[] window = Fft.MakeWindow(this.fftSize, Fft.WindowType.hann);
