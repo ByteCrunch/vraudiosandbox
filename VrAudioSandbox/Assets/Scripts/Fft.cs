@@ -32,7 +32,6 @@ public class Fft
     public static double[] MakeWindow(int n, Fft.WindowType windowFunction)
     {
         double alpha, a0, a1, a2;
-
         double[] window = new double[n];
 
         switch (windowFunction)
@@ -40,15 +39,11 @@ public class Fft
             case WindowType.hann:
                 for (int i = 0; i < n; i++)
                     window[i] = 0.5 - 0.5 * System.Math.Cos((double)i * 2 * System.Math.PI / (n - 1));
-                //amp_cf = 6;
-                //pwr_cf = 4.3;
                 break;
 
             case WindowType.hamming:
                 for (int i = 0; i < n; i++)
                     window[i] = 0.54 - 0.46 * System.Math.Cos((double)i * 2 * System.Math.PI / (n - 1));
-                //amp_cf = 5.35;
-                //pwr_cf = 4.0;
                 break;
 
             case WindowType.blackman:
@@ -61,22 +56,16 @@ public class Fft
                             a0
                         - a1 * System.Math.Cos((double)i * 2 * System.Math.PI / (n - 1))
                         + a2 * System.Math.Cos((double)i * 4 * System.Math.PI / (n - 1));
-                //amp_cf = 7.54;
-                //pwr_cf = 5.2;
                 break;
 
             case WindowType.flat:
             default:
                 for (int i = 0; i < n; i++)
                     window[i] = 1.0;
-                //amp_cf = 0;
-                //pwr_cf = 0;
                 break;
 
         }
-
         return window;
-
     }
 
 
@@ -84,9 +73,7 @@ public class Fft
     /// Runs the FFT with double precision
     /// </summary>
     /// <param name="input">input array</param>
-    /// <param name="output">array to store unnormalized transform ouput of FFT</param>
     /// <param name="real">set to true for converting double[] of real numbers to double[] of complex numbers with real and imagenary parts interleaved</param>
-    /// <param name="wt">enum window_type for window function to use</param>
     public double[] RunFft(double[] input, bool real)
     {
         if (real)
@@ -229,7 +216,7 @@ public class Fft
     /// </summary>
     /// <param name="magnitudes">double[] with magnitudes</param>
     /// <param name="phases">double[] with phase information</param>
-    /// <returns></returns>
+    /// <returns>FFT data as interleaved complex format double[]</returns>
     public static double[] GetFftDataFromMagnitudeAndPhase(double[] magnitudes, double[] phases)
     {
         int n = magnitudes.Length;

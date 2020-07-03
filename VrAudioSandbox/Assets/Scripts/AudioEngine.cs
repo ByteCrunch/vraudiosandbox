@@ -464,7 +464,7 @@ public class AudioEngine : MonoBehaviour
                 NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(this.importSampleRate, this.importChannels)
                 );
 
-        string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory).ToString() + "/" + "VrAudioSandboxExport-" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".wav"); //TODO insert timestamp
+        string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory).ToString() + "/" + "VrAudioSandboxExport-" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".wav");
         WaveFileWriter.CreateWaveFile(path, this.waveProvider);
     }
  
