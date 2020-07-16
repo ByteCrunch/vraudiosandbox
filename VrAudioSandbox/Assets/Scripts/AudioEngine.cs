@@ -122,7 +122,23 @@ public class AudioEngine : MonoBehaviour
 
     public void OpenDialog()
     {
+        // Destroy spectrum meshes GOs
+        foreach (Transform child in GameObject.Find("SpectrumMesh").transform.Cast<Transform>().ToArray())
+        {
+            Destroy(child.gameObject);
+        }
+
+        // Destroy frequency legend GOs
+        foreach (Transform child in GameObject.Find("FreqLegend").transform.Cast<Transform>().ToArray())
+        {
+            Destroy(child.gameObject);
+        }
+
+        GameObject.Find("UIMainMenu").SetActive(false);
         this.fileBrowserVr.SetActive(true);
+        FileBrowser.SingleClickMode = true;
+        FileBrowser.SetFilters(true, new FileBrowser.Filter("Audio", ".wav", ".aiff", ".mp3", ".m4a", ".ogg"));
+        FileBrowser.AddQuickLink("Examples", Application.dataPath + "/Resources/Audio/", null);
         StartCoroutine(WaitForLoadDialog(false));
     }
 
