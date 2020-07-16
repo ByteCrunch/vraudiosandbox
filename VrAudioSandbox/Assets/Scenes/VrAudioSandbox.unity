@@ -1481,7 +1481,7 @@ PrefabInstance:
     - target: {fileID: 224000013577827562, guid: 9ea2606f8fddead46aabb7adb3d8d434,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 0.64
       objectReference: {fileID: 0}
     - target: {fileID: 224000013577827562, guid: 9ea2606f8fddead46aabb7adb3d8d434,
         type: 3}
@@ -2963,7 +2963,7 @@ MonoBehaviour:
   savedUp: {x: 0.000000014901161, y: 1, z: 0}
   savedRectSize: {x: 1000, y: 100}
   savedColor: {r: 1, g: 1, b: 1, a: 1}
-  savedTextUV0: {x: 0.0859375, y: 0.033203125}
+  savedTextUV0: {x: 0.19140625, y: 0.048828125}
   savedFill: 0
 --- !u!114 &813210794
 MonoBehaviour:
@@ -4055,7 +4055,7 @@ MonoBehaviour:
   savedUp: {x: 0, y: 1, z: 0}
   savedRectSize: {x: 200, y: 50}
   savedColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  savedTextUV0: {x: 0.68359375, y: 0.091796875}
+  savedTextUV0: {x: 0.1875, y: 0.29296875}
   savedFill: 0
 --- !u!114 &1190543844
 MonoBehaviour:
@@ -4281,7 +4281,7 @@ MonoBehaviour:
   savedUp: {x: 0, y: 1, z: 0}
   savedRectSize: {x: 200, y: 50}
   savedColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  savedTextUV0: {x: 0.7890625, y: 0.099609375}
+  savedTextUV0: {x: 0.11328125, y: 0.33203125}
   savedFill: 0
 --- !u!1 &1334792351 stripped
 GameObject:
@@ -4984,7 +4984,7 @@ MonoBehaviour:
   savedUp: {x: 0.000000014901161, y: 1, z: 0}
   savedRectSize: {x: 1600, y: 300}
   savedColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  savedTextUV0: {x: 0.1875, y: 0.34765625}
+  savedTextUV0: {x: 0.19921875, y: 0.41601562}
   savedFill: 0
 --- !u!114 &1946738330
 MonoBehaviour:
